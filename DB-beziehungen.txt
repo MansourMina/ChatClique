@@ -1,0 +1,34 @@
+USERS
+-----
+user_id (PK)
+username
+email
+password
+
+FRIENDSHIPS
+----------
+friendship_id (PK)
+user1_id (FK)
+user2_id (FK)
+
+CHATS
+-----
+chat_id (PK)
+chat_name
+
+MESSAGES
+--------
+message_id (PK)
+message_text
+sent_date
+user_id (FK)
+chat_id (FK)
+
+CHATS_FRIENDSHIPS
+----------------
+chat_participant_id (PK)
+chat_id (FK)
+friendship_id (FK)
+
+
+
