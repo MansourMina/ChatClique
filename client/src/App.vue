@@ -1,11 +1,6 @@
 <template>
   <v-app>
-    <v-card
-      style="overflow: hidden; background-color: #f4f1eb"
-      max-height="100vh"
-      height="100vh"
-      tile
-    >
+    <v-card style="background-color: #f4f1eb" tile>
       <v-navigation-drawer width="25%" statless app>
         <v-list color="#00a884" class="pa-3" height="10.6vh">
           <v-list-item class="mt-4">
@@ -108,9 +103,12 @@
           <v-icon>mdi-dots-vertical</v-icon>
         </v-btn>
       </v-app-bar>
-      <v-main hide-overlay>
-        <v-container fluid><router-view /></v-container>
+      <v-main hide-overlay style="overflow: hidden">
+        <v-container fluid style="overflow-y: scroll"
+          ><router-view
+        /></v-container>
       </v-main>
+      
     </v-card>
   </v-app>
 </template>
@@ -247,4 +245,5 @@ export default {
   overflow-y: hidden;
   overflow-x: hidden;
 }
+
 </style>
