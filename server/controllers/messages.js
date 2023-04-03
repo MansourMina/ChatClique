@@ -8,4 +8,10 @@ const getMessages = asyncHandler(async (req, res) => {
   else res.status(204).send('No Messages available!');
 });
 
-module.exports = { getMessages };
+const getChatsOfUser = asyncHandler(async (req, res) => {
+    const chats = await messagesModel.getChatsOfUser(req.params.userId);
+    if(chats.length > 0) res.status(200).json(chats)
+    else res.status(204).send('No Chats found!');
+})
+
+module.exports = { getMessages, getChatsOfUser };

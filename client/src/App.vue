@@ -37,37 +37,45 @@
           style="overflow-y: scroll"
           max-height="80vh"
         >
-          <template v-for="(item, index) in items">
-            <v-subheader v-if="item.header" :key="item.header"></v-subheader>
+          <!-- <v-subheader v-if="item.header" :key="item.header"></v-subheader> -->
 
-            <v-divider
+          <!-- <v-divider
               v-else-if="item.divider"
               :key="index"
               :inset="item.inset"
-            ></v-divider>
+            ></v-divider> -->
 
-            <v-list-item v-else :key="item.title" link class="pl-4 pr-3">
-              <v-list-item-avatar>
-                <v-img :src="item.avatar"></v-img>
-              </v-list-item-avatar>
+          <v-list-item
+            link
+            class="pl-4 pr-3"
+            v-for="chat in chats"
+            :key="chat.user_id"
+            @click="setFriendChat(chat)"
+          >
+            <v-list-item-avatar>
+              <v-img
+                src="https://randomuser.me/api/portraits/women/85.jpg"
+              ></v-img>
+            </v-list-item-avatar>
 
-              <v-list-item-content>
-                <v-list-item-title>{{ item.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ item.subtitle }}</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <p>
-                  <v-list-item-action-text>{{
-                    item.action
-                  }}</v-list-item-action-text>
-                </p>
+            <v-list-item-content>
+              <v-list-item-title>{{
+                chat.friend[0].username
+              }}</v-list-item-title>
+              <v-list-item-subtitle>{{
+                chat.messages[chat.messages.length - 1].message
+              }}</v-list-item-subtitle>
+            </v-list-item-content>
+            <v-list-item-action>
+              <p>
+                <v-list-item-action-text>15 min ago</v-list-item-action-text>
+              </p>
 
-                <v-badge color="green" class="mr-3 ml-5 mt-3">
-                  <span slot="badge">{{ item.msgcount }}</span>
-                </v-badge>
-              </v-list-item-action>
-            </v-list-item>
-          </template>
+              <v-badge color="green" class="mr-3 ml-5 mt-3">
+                <span slot="badge">{{ 2 }}</span>
+              </v-badge>
+            </v-list-item-action>
+          </v-list-item>
         </v-list>
       </v-navigation-drawer>
       <v-app-bar
@@ -88,7 +96,7 @@
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title class="text-h6 white--text">
-              Mina Mansour
+              {{friendChat.friend[0].username}}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -104,120 +112,43 @@
         </v-btn>
       </v-app-bar>
       <v-main hide-overlay style="overflow: hidden">
-        <v-container fluid style="overflow-y: scroll"
-          ><router-view
+        <v-container fluid style="overflow-y: scroll" 
+          ><router-view :chats="chats" :friendChat="friendChat" 
         /></v-container>
       </v-main>
-      
     </v-card>
   </v-app>
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: 'App',
 
   data: () => ({
     search: '',
-    items: [
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-        name: 'Filip Wojtasik',
-        subtitle: `Ali Connors I'll be in your neighborhood doing errands this weekend. Do you want to hang out?`,
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/2.jpg',
-        name: 'Haroon Younas',
-        subtitle: `li Connors I'll be in your neighborhood doing errands this weekend. Do you want to hang out?`,
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/3.jpg',
-        name: 'Filip Wojtasik',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/4.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-      { divider: true, inset: true },
-      {
-        avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
-        name: 'Haroon Younas',
-        subtitle:
-          'li Connors I ll be in your neighborhood doing errands this weekend. Do you want to hang out?',
-        msgcount: 6,
-        action: '15 min ago',
-      },
-    ],
+    chats: [],
+    user_id: '4593822',
+    friendChat: {},
   }),
+  async created() {
+    await this.getChats();
+    let friendChat = JSON.parse(localStorage.getItem('friendChat'));
+    if (friendChat) this.friendChat = friendChat;
+  },
+  methods: {
+    async getChats() {
+      const { data } = await axios({
+        url: `http://localhost:3000/chats/${this.user_id}`,
+        method: 'GET',
+      });
+      this.chats = data;
+    },
+    setFriendChat(chat) {
+      localStorage.setItem('friendChat', JSON.stringify(chat));
+      this.friendChat = chat;
+    },
+  },
 };
 </script>
 
@@ -245,5 +176,4 @@ export default {
   overflow-y: hidden;
   overflow-x: hidden;
 }
-
 </style>
