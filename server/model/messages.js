@@ -11,7 +11,7 @@ async function getChatsOfUser(userId) {
            WHEN f.user1_id = $1 THEN (u2.username, u2.user_id)
            ELSE (u1.username, u1.user_id)
            END as friend,
-       chat_name,
+       chat_name, c.chat_id,
        json_agg(json_build_object('message_id',m.message_id,'username', sender.username, 'user_id', sender.user_id, 'message',
                                   m.text)) AS messages
 FROM friendships f
@@ -23,7 +23,7 @@ FROM friendships f
          JOIN users sender on sender.user_id = m.user_id
 WHERE
     (f.user1_id = $1 OR f.user2_id = $1)
-GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name`,
+GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name,c.chat_id `,
     [userId],
   );
 
@@ -43,4 +43,11 @@ GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name`,
   return rows;
 }
 
-module.exports = { getMessages, getChatsOfUser };
+async function postMessage(body) {
+  const { rows } = await db.query(
+    'INSERT INTO messages (message_id,text, send_date, user_id, chat_id) VALUES ($1, $2, $3, $4,$5);',
+    [body.message_id, body.text, body.send_date, body.user_id, body.chat_id],
+  );
+  return rows[0];
+}
+module.exports = { getMessages, getChatsOfUser, postMessage };

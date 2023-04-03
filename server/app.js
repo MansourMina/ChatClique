@@ -11,12 +11,14 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 require('dotenv').config();
 require('colors');
 
-const { wsServer } = require('./websockets/ws');
+// const { wsServer } = require('./websockets/ws');
 const app = express();
 
 app.use(morgan('dev'));
 app.use(cors());
 app.use(helmet());
+
+app.use(express.json());
 
 app.use(express.static(path.join(__dirname, '/public')));
 app.use(history());
@@ -28,7 +30,9 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT ?? 5000;
 
-const httpServer = app.listen(PORT);
-console.log(`***The server is now running on ${PORT}*** \n ------------------------`);
+app.listen(PORT);
+console.log(
+  `***The server is now running on ${PORT}*** \n ------------------------`,
+);
 
-wsServer(httpServer);
+// wsServer(httpServer);

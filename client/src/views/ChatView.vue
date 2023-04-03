@@ -6,10 +6,11 @@
     <v-footer padless absolute color="transparent">
       <!-- <v-col class="text-center mt-0 pt-0" cols="12"> -->
       <v-text-field
-        value="John Doe"
-        label="Solo"
+        label="send a message"
         solo
         hide-details
+        v-model="message"
+        @keyup.enter="sendMessage()"
       ></v-text-field>
       <!-- </v-col> -->
     </v-footer>
@@ -27,8 +28,21 @@ export default {
       type: Object,
     },
   },
+  data() {
+    return {
+      message: '',
+    };
+  },
   components: {
     Chat,
+  },
+  methods: {
+    async sendMessage() {
+      this.$emit('sendMessage', {
+        friendChat: this.friendChat,
+        text: this.message,
+      });
+    },
   },
 };
 </script>

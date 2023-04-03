@@ -6,7 +6,9 @@
           <v-list-item class="mt-4">
             <v-list-item-avatar>
               <v-img
-                src="https://randomuser.me/api/portraits/women/85.jpg"
+                src="./assets/placeholder.jpg"
+                height="40"
+                width="20"
               ></v-img>
             </v-list-item-avatar>
             <v-list-item-content>
@@ -91,12 +93,18 @@
         <v-list-item>
           <v-list-item-avatar>
             <v-img
-              src="https://randomuser.me/api/portraits/women/85.jpg"
+              src="./assets/placeholder.jpg"
+              height="40"
+              width="20"
             ></v-img>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title class="text-h6 white--text">
-              {{friendChat.friend[0].username}}
+              {{
+                Object.keys(friendChat).length > 0
+                  ? friendChat.friend[0].username
+                  : ''
+              }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -112,8 +120,11 @@
         </v-btn>
       </v-app-bar>
       <v-main hide-overlay style="overflow: hidden">
-        <v-container fluid style="overflow-y: scroll" 
-          ><router-view :chats="chats" :friendChat="friendChat" 
+        <v-container fluid style="overflow-y: scroll"
+          ><router-view
+            :chats="chats"
+            :friendChat="friendChat"
+            @sendMessage="postMessage"
         /></v-container>
       </v-main>
     </v-card>
@@ -147,6 +158,25 @@ export default {
     setFriendChat(chat) {
       localStorage.setItem('friendChat', JSON.stringify(chat));
       this.friendChat = chat;
+    },
+    async postMessage(data) {
+      console.log(data);
+      try {
+        await axios({
+          url: 'http://localhost:3000/messages',
+          method: 'POST',
+          contentType: 'application/json',
+          data: {
+            text: data.text,
+            send_date: new Date(),
+            user_id: this.user_id,
+            chat_id: data.friendChat.chat_id,
+          },
+        });
+        this.getChats();
+      } catch (err) {
+        console.log(err.response.data);
+      }
     },
   },
 };

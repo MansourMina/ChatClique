@@ -1,3 +1,13 @@
 GET  http://127.0.0.1:3000/messages
 ###
 GET  http://127.0.0.1:3000/chats/4730996
+###
+POST  http://127.0.0.1:3000/messages
+content-Type: application/json
+
+{
+    "text": "hi",
+    "send_date": "2023-01-11",
+    "user_id": "4593822",
+    "chat_id": "2927"
+}
