@@ -2,6 +2,8 @@ GET  http://127.0.0.1:3000/messages
 ###
 GET  http://127.0.0.1:3000/chats/4730996
 ###
+GET  http://127.0.0.1:3000/users/4730996
+###
 POST  http://127.0.0.1:3000/messages
 content-Type: application/json
 

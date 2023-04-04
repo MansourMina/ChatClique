@@ -50,4 +50,22 @@ async function postMessage(body) {
   );
   return rows[0];
 }
-module.exports = { getMessages, getChatsOfUser, postMessage };
+
+async function getUsersById(user_id) {
+  const { rows } = await db.query('SELECT * from users where user_id = $1', [
+    user_id,
+  ]);
+  return rows[0];
+}
+
+async function getUsers() {
+  const { rows } = await db.query('SELECT * from users ');
+  return rows;
+}
+module.exports = {
+  getMessages,
+  getChatsOfUser,
+  postMessage,
+  getUsersById,
+  getUsers,
+};

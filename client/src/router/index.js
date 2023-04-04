@@ -11,6 +11,11 @@ const routes = [
     component: ChatView,
     params: true,
   },
+  // {
+  //   path: '/user/:username',
+  //   name: 'User',
+  //   component: ChatView,
+  // },
 ];
 
 const router = new VueRouter({
