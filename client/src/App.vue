@@ -30,11 +30,20 @@
             class="pa-4"
             hide-details
             clearable
+            v-model="search"
           >
             <template v-slot:prepend>
               <v-icon class="ml-2 mr-3">mdi-magnify</v-icon>
             </template>
+            <template v-slot:append-outer>
+              <v-btn icon
+                ><v-icon class="ml-2 mr-3"
+                  >mdi-account-multiple-plus-outline</v-icon
+                ></v-btn
+              >
+            </template>
           </v-text-field>
+
           <v-divider></v-divider>
           <v-list
             three-line
@@ -55,7 +64,7 @@
               :class="`pl-4 pr-3 ${
                 friendChat.chat_id == chat.chat_id ? 'blue-grey lighten-5' : ''
               }`"
-              v-for="chat in chats"
+              v-for="chat in searchChats"
               :key="chat.user_id"
               @click="setFriendChat(chat)"
             >
@@ -75,7 +84,11 @@
               </v-list-item-content>
               <v-list-item-action>
                 <p>
-                  <v-list-item-action-text>15 min ago</v-list-item-action-text>
+                  <v-list-item-action-text>{{
+                    getMessageDate(
+                      chat.messages[chat.messages.length - 1].send_date,
+                    )
+                  }}</v-list-item-action-text>
                 </p>
 
                 <v-badge color="green" class="mr-3 ml-5 mt-3">
@@ -167,6 +180,13 @@ export default {
       if (friendChat) this.friendChat = friendChat;
     }
   },
+  computed: {
+    searchChats() {
+      return this.chats.filter((el) =>
+        el.friend[0].username.includes(this.search),
+      );
+    },
+  },
   methods: {
     async getChats() {
       const { data } = await axios({
@@ -175,6 +195,32 @@ export default {
       });
       this.chats = data;
     },
+    getMessageDate(time) {
+      let dateToday = new Date().toDateString();
+      let longDateYesterday = new Date().toDateString();
+
+      let today = dateToday.slice(0, dateToday.length - 5);
+      let yesterday = longDateYesterday.slice(0, dateToday.length - 5);
+
+      const messageTime = new Date(time).toDateString();
+
+      let messageDateString = messageTime.slice(0, messageTime.length - 5);
+
+      if (new Date(time).getFullYear() === new Date().getFullYear()) {
+        if (messageDateString === today) {
+          let dateOfLastMessage = new Date(time);
+
+          return `${dateOfLastMessage.getHours()}:${dateOfLastMessage.getMinutes()}`;
+        } else if (messageDateString === yesterday) {
+          return 'Yesterday';
+        } else {
+          return messageDateString;
+        }
+      } else {
+        return messageTime;
+      }
+    },
+
     setFriendChat(chat) {
       localStorage.setItem('friendChat', JSON.stringify(chat));
       this.friendChat = chat;
