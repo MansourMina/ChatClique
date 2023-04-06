@@ -1,20 +1,24 @@
 <template>
-  <v-container fluid style="overflow-y: scroll; height: 89vh">
-    <v-timeline color="green" class="pb-6">
+  <v-container fluid style="overflow-y: scroll; height: 89vh" ref="container">
+    <v-timeline color="green" class="pb-6" v-if="messages.length > 0">
       <div>
         <v-timeline-item
-          v-for="message in messages"
-          :key="message.message.message_id"
+          v-for="message in messages.filter(
+            (el) => el.chat_id == friendChat.chat_id,
+          )[0].messages"
+          :key="message.message_id"
           color="red lighten-2"
           hide-dot
-          icon="mdi-magnify"
           :left="message.user_id != user.user_id"
           :right="message.user_id == user.user_id"
+          :style="`text-align: ${
+            message.user_id == user.user_id ? 'right' : 'left'
+          } `"
+          ref="chat"
         >
           <v-card
             class="elevation-3 d-inline-block"
             max-width="100%"
-            min-width="50%"
             :color="message.user_id == user.user_id ? '#d9fdd3' : 'white'"
             :style="`text-align: ${
               message.user_id == user.user_id ? 'right' : 'left'
@@ -27,14 +31,13 @@
           {{ message.user_id }}
         </v-card-text> -->
             <v-card-text class="pt-2 pb-2">
-              {{ message.text }}
+              {{ message.message }}
             </v-card-text>
           </v-card>
         </v-timeline-item>
       </div>
     </v-timeline>
     <v-footer padless absolute color="transparent">
-      <!-- <v-col class="text-center mt-0 pt-0" cols="12"> -->
       <v-text-field
         label="send a message"
         solo
@@ -42,7 +45,6 @@
         v-model="message"
         @keyup.enter="sendMessage()"
       ></v-text-field>
-      <!-- </v-col> -->
     </v-footer>
   </v-container>
 </template>
@@ -50,25 +52,20 @@
 export default {
   name: 'MessageViewBody',
   props: {
-    chats: {
-      type: Array,
+    friendChat: {
+      type: Object,
     },
-    // friendChat: {
-    //   type: Object,
-    // },
   },
+
   created() {
     this.getUser();
+
     const server = process.env.VUE_APP_SERVER;
     const protocol = process.env.VUE_APP_WS_PROTOCOL;
     this.ws = new WebSocket(
       server ? `${protocol}://${server}` : `${protocol}://${location.host}`,
     );
-    let friendChat = JSON.parse(localStorage.getItem('friendChat'));
-    if (friendChat != null) {
-      this.friendChat = friendChat;
-    }
-    this.messages = this.friendChat.messages;
+
     this.ws.onopen = () => {
       this.ws.send(
         JSON.stringify({
@@ -82,13 +79,14 @@ export default {
 
       switch (message.type) {
         case 'text':
-          // eslint-disable-next-line vue/no-mutating-props
-          // this.$emit('addToChat', {
-          //   friendChat: this.friendChat,
-          //   message: message.payload.message,
-          // }));
+          this.messages
+            .filter((el) => el.chat_id == this.friendChat.chat_id)[0]
+            .messages.push(message.payload.message);
+          this.scrollToEnd();
 
-          this.messages.push(message.payload);
+          break;
+        case 'loadMessages':
+          this.messages = message.payload;
       }
     };
   },
@@ -98,7 +96,6 @@ export default {
       ws: null,
       messages: [],
       user: {},
-      friendChat: {},
     };
   },
 
@@ -108,24 +105,36 @@ export default {
       if (user != null) {
         this.user = user;
       }
+      // console.log(this.messages)
+      // return this.messages.filter(
+      //   (el) => el.chat_id == this.friendChat.chat_id,
+      // )[0].messages;
     },
-    async sendMessage() {
+    sendMessage() {
+      let data = {
+        sender: this.user,
+        receiver: this.friendChat.friend[0],
+        message: {
+          user_id: this.user.user_id,
+          chat_id: this.friendChat.chat_id,
+          send_date: new Date(),
+          message: this.message,
+        },
+      };
       this.ws.send(
         JSON.stringify({
           type: 'message',
-          payload: {
-            sender: this.user,
-            receiver: this.friendChat.friend[0],
-            message: {
-              user_id: this.user.user_id,
-              chat_id: this.friendChat.chat_id,
-              send_date: new Date(),
-              text: this.message,
-            },
-          },
+          payload: data,
         }),
       );
       this.message = '';
+      this.scrollToEnd();
+
+      // this.$refs.chat[this.messages.length - 1].focus;
+    },
+    scrollToEnd() {
+      const container = this.$refs['container'];
+      this.$nextTick(() => (container.scrollTop = container.scrollHeight));
     },
   },
 };

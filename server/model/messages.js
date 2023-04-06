@@ -12,7 +12,7 @@ async function getChatsOfUser(userId) {
            ELSE (u1.username, u1.user_id)
            END as friend,
        chat_name, c.chat_id,
-       json_agg(json_build_object('message_id',m.message_id,'username', sender.username, 'user_id', sender.user_id, 'message',
+       json_agg(json_build_object('message_id',m.message_id,'username', sender.username, 'user_id', sender.user_id, 'send_date', send_date, 'message',
                                   m.text)) AS messages
 FROM friendships f
          JOIN users u1 ON f.user1_id = u1.user_id
@@ -34,19 +34,20 @@ GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name,c.
     el.friend = [{ username: splittedFriend[0], user_id: splittedFriend[1] }];
 
     el.messages.forEach((m) => {
+      m.send_date = new Date(m.send_date);
       ownMessage = false;
       if (m.user_id === userId) m.ownMessage = true;
       else m.ownMessage = false;
     });
+    el.messages = el.messages.sort((a, b) => a.send_date - b.send_date);
   });
-
   return rows;
 }
 
 async function postMessage(body) {
   const { rows } = await db.query(
     'INSERT INTO messages (message_id,text, send_date, user_id, chat_id) VALUES ($1, $2, $3, $4,$5);',
-    [body.message_id, body.text, body.send_date, body.user_id, body.chat_id],
+    [body.message_id, body.message, body.send_date, body.user_id, body.chat_id],
   );
   return rows[0];
 }

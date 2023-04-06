@@ -52,7 +52,9 @@
 
             <v-list-item
               link
-              class="pl-4 pr-3"
+              :class="`pl-4 pr-3 ${
+                friendChat.chat_id == chat.chat_id ? 'blue-grey lighten-5' : ''
+              }`"
               v-for="chat in chats"
               :key="chat.user_id"
               @click="setFriendChat(chat)"
@@ -83,52 +85,54 @@
             </v-list-item>
           </v-list>
         </v-navigation-drawer>
-        <v-app-bar
-          color="#00a884"
-          class="pa-3"
-          height="100"
-          elevation="0"
-          app
-          rounded="0"
-        >
-          <v-app-bar-nav-icon color="white"></v-app-bar-nav-icon>
 
-          <v-list-item>
-            <v-list-item-avatar>
-              <v-img
-                src="./assets/placeholder.jpg"
-                height="40"
-                width="20"
-              ></v-img>
-            </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title class="text-h6 white--text">
-                {{
-                  Object.keys(friendChat).length > 0
-                    ? friendChat.friend[0].username
-                    : ''
-                }}
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
+        <div v-if="friendChat.friend">
+          <v-app-bar
+            color="#00a884"
+            class="pa-3"
+            height="100"
+            elevation="0"
+            app
+            rounded="0"
+          >
+            <v-app-bar-nav-icon color="white"></v-app-bar-nav-icon>
 
-          <v-spacer></v-spacer>
+            <v-list-item>
+              <v-list-item-avatar>
+                <v-img
+                  src="./assets/placeholder.jpg"
+                  height="40"
+                  width="20"
+                ></v-img>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title class="text-h6 white--text">
+                  {{
+                    Object.keys(friendChat).length > 0
+                      ? friendChat.friend[0].username
+                      : ''
+                  }}
+                </v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
 
-          <v-btn icon color="white">
-            <v-icon>mdi-magnify</v-icon>
-          </v-btn>
+            <v-spacer></v-spacer>
 
-          <v-btn icon color="white">
-            <v-icon>mdi-dots-vertical</v-icon>
-          </v-btn>
-        </v-app-bar>
-        <v-main hide-overlay style="overflow: hidden">
-          <router-view
-            :chats="chats"
-            :friendChat="friendChat"
-            @addToChat="postMessage"
-          />
-        </v-main>
+            <v-btn icon color="white">
+              <v-icon>mdi-magnify</v-icon>
+            </v-btn>
+
+            <v-btn icon color="white">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </v-app-bar>
+          <v-main hide-overlay style="overflow: hidden">
+            <router-view :chats="chats" :friendChat="friendChat" />
+          </v-main>
+        </div>
+        <div v-else>
+          <v-main><Home /></v-main>
+        </div>
       </v-card>
     </div>
     <div v-else>
@@ -139,11 +143,13 @@
 
 <script>
 import Login from '@/views/Login.vue';
+import Home from '@/views/Home.vue';
 import axios from 'axios';
 export default {
   name: 'App',
   components: {
     Login,
+    Home,
   },
   data: () => ({
     ws: null,
@@ -179,7 +185,6 @@ export default {
         this.user = user;
       }
     },
-    postMessage() {},
   },
 };
 </script>

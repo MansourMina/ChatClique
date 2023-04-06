@@ -50,7 +50,6 @@ function generateMessageId() {
   const secondMax = 9999999;
   const firstNumber = Math.floor(Math.random() * (firstMax - firstMin));
   const secondNumber = Math.floor(Math.random() * (secondMax - secondMin));
-  console.log(`${firstNumber.toString()}-${secondNumber.toString()}`);
   return `${firstNumber.toString()}-${secondNumber.toString()}`;
 }
 
