@@ -17,7 +17,16 @@ function wsServer(httpServer) {
 
     ws.on('close', () => {
       console.log('Client disconnected!');
-      connections = connections.filter((el) => el.ws != ws);
+      disonnectedUser = connections.find((el) => el.ws === ws);
+      if (disonnectedUser) {
+        ws.send(
+          JSON.stringify({
+            type: 'disconnected',
+            payload: connections.find((el) => el.ws === ws).connection.user,
+          }),
+        );
+        connections = connections.filter((el) => el.ws != ws);
+      }
     });
   });
 }
@@ -67,7 +76,7 @@ async function registerConnection(ws, user) {
       `http://127.0.0.1:3000/chats/${user.user.user_id}`,
     );
 
-    console.log(connections.map((el) => el.connection));
+    // console.log(connections.map((el) => el.connection));
     console.log('New client connected!');
     ws.send(
       JSON.stringify({
@@ -75,16 +84,12 @@ async function registerConnection(ws, user) {
         payload: data,
       }),
     );
-    // connections.forEach((el) =>
-    //   el.ws.send(
-    //     JSON.stringify({
-    //       type: 'text',
-    //       art: 'information',
-    //       payload: { nickname: nick, message: 'wurde hinzugefügt' },
-    //     }),
-    //   ),
-    // );
-    // updateNickNames();
+    ws.send(
+      JSON.stringify({
+        type: 'connected',
+        payload: connections.find((el) => el.ws === ws).connection.user,
+      }),
+    );
   }
 }
 module.exports = { wsServer };

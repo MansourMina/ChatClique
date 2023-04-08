@@ -43,6 +43,20 @@ const login = asyncHandler(async (req, res) => {
   } else res.status(400).send('Login failed');
 });
 
+const redirectLogin = (req, res, next) => {
+  if (!req.session.userId) console.log('You are not logged in!');
+  else next();
+};
+
+// eslint-disable-next-line operator-linebreak
+const logout =
+  (redirectLogin,
+  (req, res) => {
+    req.session.destroy();
+    res.clearCookie(process.env.SESSION_NAME);
+    res.status(200).send('erfolgreich ausgeloggt');
+  });
+
 function generateMessageId() {
   const firstMin = 1;
   const firstMax = 99;
@@ -61,4 +75,5 @@ module.exports = {
   getUsersById,
   login,
   generateMessageId,
+  logout,
 };

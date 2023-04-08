@@ -8,12 +8,14 @@ const {
   getUsers,
   login,
   getUsersById,
+  logout,
 } = require('../controllers/messages');
 
 router.get('/messages', getMessages);
 router.get('/users/:userId', getUsersById);
 router.get('/users', getUsers);
 router.get('/chats/:userId', getChatsOfUser);
+router.get('/logout', logout);
 
 router.post('/messages', postMessage);
 router.post('/login', login);

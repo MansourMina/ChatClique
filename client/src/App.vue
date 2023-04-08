@@ -1,8 +1,8 @@
 <template>
   <v-app>
     <div v-if="user.user_id">
-      <v-card style="background-color: #f4f1eb" tile>
-        <v-navigation-drawer width="25%" statless app>
+      <v-card tile id="application">
+        <v-navigation-drawer width="30%" statless app>
           <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
             <v-list color="transparent" class="pa-3">
               <v-list-item class="mt-4">
@@ -23,6 +23,22 @@
                 </v-list-item-content>
               </v-list-item>
             </v-list>
+            <v-spacer></v-spacer>
+            <div class="mt-6">
+              <v-menu bottom left offset-y>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn dark icon v-bind="attrs" v-on="on">
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+
+                <v-list>
+                  <v-list-item link @click="logout()">
+                    <v-list-item-title>Abmelden</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </div>
           </v-app-bar>
 
           <v-text-field
@@ -36,7 +52,7 @@
               <v-icon class="ml-2 mr-3">mdi-magnify</v-icon>
             </template>
             <template v-slot:append-outer>
-              <v-btn icon
+              <v-btn icon @click="addFriendDialog = true"
                 ><v-icon class="ml-2 mr-3"
                   >mdi-account-multiple-plus-outline</v-icon
                 ></v-btn
@@ -78,17 +94,30 @@
                 <v-list-item-title>{{
                   chat.friend[0].username
                 }}</v-list-item-title>
-                <v-list-item-subtitle>{{
-                  chat.messages[chat.messages.length - 1].message
-                }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  <span class="font-weight-bold">
+                    {{
+                      chat.messages[chat.messages.length - 1].user_id ==
+                      user.user_id
+                        ? 'You:'
+                        : ''
+                    }}
+                  </span>
+
+                  {{
+                    chat.messages[chat.messages.length - 1].message
+                  }}</v-list-item-subtitle
+                >
               </v-list-item-content>
               <v-list-item-action>
                 <p>
-                  <v-list-item-action-text>{{
-                    getMessageDate(
-                      chat.messages[chat.messages.length - 1].send_date,
-                    )
-                  }}</v-list-item-action-text>
+                  <v-list-item-action-text>
+                    {{
+                      getMessageDate(
+                        chat.messages[chat.messages.length - 1].send_date,
+                      )
+                    }}</v-list-item-action-text
+                  >
                 </p>
 
                 <v-badge color="green" class="mr-3 ml-5 mt-3">
@@ -148,21 +177,27 @@
         </div>
       </v-card>
     </div>
+
     <div v-else>
       <v-main><Login /></v-main>
     </div>
+    <v-dialog v-model="addFriendDialog" max-width="100vh" hide-overlay>
+      <addFriend @close="addFriendDialog = false" />
+    </v-dialog>
   </v-app>
 </template>
 
 <script>
 import Login from '@/views/Login.vue';
 import Home from '@/views/Home.vue';
+import addFriend from '@/components/addFriend.vue';
 import axios from 'axios';
 export default {
   name: 'App',
   components: {
     Login,
     Home,
+    addFriend,
   },
   data: () => ({
     ws: null,
@@ -170,6 +205,7 @@ export default {
     chats: [],
     friendChat: {},
     user: {},
+    addFriendDialog: false,
   }),
   async created() {
     this.getUser();
@@ -195,6 +231,23 @@ export default {
       });
       this.chats = data;
     },
+    async logout() {
+      await axios({
+        url: 'http://localhost:3000/logout',
+        method: 'GET',
+      });
+      localStorage.clear();
+      this.$router.push('/');
+      this.$router.go();
+    },
+    // setUserStatus(data) {
+    //   let { user } = data;
+    //   // console.log(this.chats);
+
+    //   // console.log(
+    //   //   this.chats.find((el) => el.friend[0].user_id == user.user_id),
+    //   // );
+    // },
     getMessageDate(time) {
       let dateToday = new Date().toDateString();
       let longDateYesterday = new Date().toDateString();
@@ -258,5 +311,10 @@ export default {
   height: 100%;
   overflow-y: hidden;
   overflow-x: hidden;
+}
+
+#application {
+  background: url('./assets/background.png') center fixed !important;
+  background-size: cover;
 }
 </style>
