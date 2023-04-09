@@ -13,7 +13,7 @@ async function getChatsOfUser(userId) {
            END as friend,
        chat_name, c.chat_id,
        json_agg(json_build_object('message_id',m.message_id,'username', sender.username, 'user_id', sender.user_id, 'send_date', send_date, 'message',
-                                  m.text)) AS messages
+                                  m.text, 'type', m.type)) AS messages
 FROM friendships f
          JOIN users u1 ON f.user1_id = u1.user_id
          JOIN users u2 ON f.user2_id = u2.user_id
@@ -46,8 +46,15 @@ GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name,c.
 
 async function postMessage(body) {
   const { rows } = await db.query(
-    'INSERT INTO messages (message_id,text, send_date, user_id, chat_id) VALUES ($1, $2, $3, $4,$5);',
-    [body.message_id, body.message, body.send_date, body.user_id, body.chat_id],
+    'INSERT INTO messages (message_id,text, send_date, user_id, chat_id, type) VALUES ($1, $2, $3, $4,$5, $6);',
+    [
+      body.message_id,
+      body.message,
+      body.send_date,
+      body.user_id,
+      body.chat_id,
+      body.type,
+    ],
   );
   return rows[0];
 }

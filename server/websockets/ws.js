@@ -4,14 +4,13 @@ let connections = [];
 function wsServer(httpServer) {
   const wss = new WebSocket.Server({ server: httpServer });
   wss.on('connection', (ws) => {
-    http: ws.on('message', (p) => {
+    ws.on('message', (p) => {
       const data = JSON.parse(p);
       if (data.type == 'connected') {
         registerConnection(ws, data.payload);
       }
       if (data.type == 'message') {
-        const payload = data.payload;
-        sendMessage(payload);
+        sendMessage(data.payload);
       }
     });
 
@@ -40,7 +39,6 @@ function sendMessage(payload) {
       el.ws.send(
         JSON.stringify({
           type: 'text',
-          art: 'message',
           payload: {
             sender: payload.sender,
             receiver: payload.receiver,
@@ -53,9 +51,7 @@ function sendMessage(payload) {
   axios
     .post('http://localhost:3000/messages', payload.message)
     .then()
-    .catch(function (error) {
-      console.log(error);
-    });
+    .catch(function () {});
 }
 
 async function registerConnection(ws, user) {

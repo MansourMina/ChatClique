@@ -104,10 +104,11 @@
                     }}
                   </span>
 
-                  {{
-                    chat.messages[chat.messages.length - 1].message
-                  }}</v-list-item-subtitle
-                >
+                  <span>
+                    <v-icon v-if="chat.messages[chat.messages.length - 1].type == 'image'" small>mdi-camera</v-icon>
+                    {{ lastMessage(chat) }}
+                  </span>
+                </v-list-item-subtitle>
               </v-list-item-content>
               <v-list-item-action>
                 <p>
@@ -168,7 +169,7 @@
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </v-app-bar>
-          <v-main hide-overlay style="overflow: hidden">
+          <v-main hide-overlay >
             <router-view :chats="chats" :friendChat="friendChat" />
           </v-main>
         </div>
@@ -273,7 +274,10 @@ export default {
         return messageTime;
       }
     },
-
+    lastMessage(chat) {
+      const lastMessage = chat.messages[chat.messages.length - 1];
+      return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
+    },
     setFriendChat(chat) {
       localStorage.setItem('friendChat', JSON.stringify(chat));
       this.friendChat = chat;

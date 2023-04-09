@@ -1,66 +1,111 @@
 <template>
-  <v-container fluid style="overflow-y: scroll; height: 89vh" ref="container">
-    <v-timeline color="green" class="pb-6" v-if="messages.length > 0">
-      <div>
-        <v-timeline-item
-          v-for="message in messages.filter(
-            (el) => el.chat_id == friendChat.chat_id,
-          )[0].messages"
-          :key="message.message_id"
-          color="red lighten-2"
-          hide-dot
-          :left="message.user_id != user.user_id"
-          :right="message.user_id == user.user_id"
-          :style="`text-align: ${
-            message.user_id == user.user_id ? 'right' : 'left'
-          } `"
-          ref="chat"
-        >
-          <v-card
-            class="elevation-3 d-inline-block"
-            max-width="100%"
-            :color="message.user_id == user.user_id ? '#d9fdd3' : 'white'"
+  <div>
+    <v-container
+      fluid
+      style="overflow: hidden; overflow-y: scroll; height: 89vh"
+      ref="container"
+    >
+      <v-timeline color="green" class="mb-9" v-if="messages.length > 0">
+        <div>
+          <v-timeline-item
+            v-for="message in messages.filter(
+              (el) => el.chat_id == friendChat.chat_id,
+            )[0].messages"
+            :key="message.message_id"
+            color="red lighten-2"
+            hide-dot
+            :left="message.user_id != user.user_id"
+            :right="message.user_id == user.user_id"
             :style="`text-align: ${
               message.user_id == user.user_id ? 'right' : 'left'
             } `"
+            ref="chat"
           >
-            <!-- <v-card-text
-          :class="`pb-0 pt-2 ${randomColorPicker()}--text`"
-          v-if="!message.ownMessage"
-        >
-          {{ message.user_id }}
-        </v-card-text> -->
-            <v-card-text class="pt-2 black--text mb-0 pb-0">
-              {{ message.message }}
-            </v-card-text>
-            <span
-              class="text-caption grey--text text--darken-1 float-right mr-2"
-              style="font-size: 0.65rem !important"
+            <v-card
+              class="elevation-3 d-inline-block"
+              max-width="100%"
+              :color="message.user_id == user.user_id ? '#d9fdd3' : 'white'"
+              :style="`text-align: ${
+                message.user_id == user.user_id ? 'right' : 'left'
+              } `"
             >
-              {{ time(message.send_date) }}
-            </span>
-          </v-card>
-          <div class="triUp"></div>
-        </v-timeline-item>
-      </div>
-    </v-timeline>
-    <v-footer padless absolute color="transparent">
-      <div class="image-upload">
-        <v-btn for="file-input">
-          <v-icon>mdi-magnify</v-icon>
-        </v-btn>
+              <!-- <v-card-text
+            :class="`pb-0 pt-2 ${randomColorPicker()}--text`"
+            v-if="!message.ownMessage"
+          >
+            {{ message.user_id }}
+          </v-card-text> -->
+              <v-card-text
+                class="pt-2 black--text mb-0 pb-0"
+                v-if="message.type == 'text'"
+              >
+                {{ message.message }}
+              </v-card-text>
+              <v-img
+                v-if="message.type == 'image'"
+                :src="message.message"
+              ></v-img>
+              <span
+                class="text-caption grey--text text--darken-1 float-right mr-2"
+                style="font-size: 0.65rem !important"
+              >
+                {{ time(message.send_date) }}
+              </span>
+            </v-card>
+            <div class="triUp"></div>
+          </v-timeline-item>
+        </div>
+      </v-timeline>
+    </v-container>
+    <v-footer padless absolute color="#f0f2f5">
+      <v-btn color="black" dark icon @click="handleFileImport">
+        <v-icon>mdi-paperclip</v-icon>
+      </v-btn>
 
-        <input id="file-input" type="file" />
-      </div>
+      <!-- hidden but triggered with JavaScript -->
+      <input
+        ref="uploader"
+        class="d-none"
+        type="file"
+        @input="onFileChanged"
+        accept="image/png, image/jpeg"
+      />
+      <v-file-input
+        v-if="showFile"
+        class="pa-2"
+        solo
+        hide-details
+        flat
+        rounded
+        truncate-length="15"
+        v-model="selectedFile"
+        append-icon="mdi-close"
+        :clearable="false"
+        prepend-icon=""
+        @click:append="closeFileInput()"
+        @keyup.enter="message.length > 0 ? sendMessage() : false"
+      ></v-file-input>
       <v-text-field
+        v-else
+        class="pa-2"
         label="send a message"
         solo
         hide-details
+        flat
+        rounded
         v-model="message"
-        @keyup.enter="sendMessage()"
+        @keyup.enter="message.length > 0 ? sendMessage() : false"
       ></v-text-field>
+      <v-btn
+        color="black"
+        dark
+        icon
+        @click="message.length > 0 ? sendMessage() : false"
+      >
+        <v-icon>mdi-send</v-icon>
+      </v-btn>
     </v-footer>
-  </v-container>
+  </div>
 </template>
 <script>
 export default {
@@ -105,8 +150,8 @@ export default {
             .filter((el) => el.chat_id == this.friendChat.chat_id)[0]
             .messages.push(message.payload.message);
           this.scrollToEnd();
-
           break;
+
         case 'loadMessages':
           this.messages = message.payload;
       }
@@ -118,6 +163,9 @@ export default {
       ws: null,
       messages: [],
       user: {},
+      selectedFile: null,
+      showFile: false,
+      messageToSend: 'text',
     };
   },
 
@@ -140,12 +188,14 @@ export default {
           user_id: this.user.user_id,
           chat_id: this.friendChat.chat_id,
           send_date: new Date(),
+          type: this.messageToSend,
           message: this.message,
         },
       };
       this.ws.send(
         JSON.stringify({
           type: 'message',
+          art: this.messageToSend,
           payload: data,
         }),
       );
@@ -171,11 +221,52 @@ export default {
       const container = this.$refs['container'];
       this.$nextTick(() => (container.scrollTop = container.scrollHeight));
     },
+    handleFileImport() {
+      this.showFile = true;
+      this.$refs.uploader.click();
+    },
+    async onFileChanged(e) {
+      this.selectedFile = e.target.files[0];
+      this.messageToSend = 'image';
+
+      await this.getBase64(this.selectedFile).then((data) => {
+        this.message = data;
+      });
+    },
+    closeFileInput() {
+      this.showFile = false;
+      this.messageToSend = 'text';
+      this.message = '';
+    },
+    getSizeOfImage(img) {
+      return { width: img.width, height: img.height };
+    },
+    getBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        return Promise.resolve(reader.result);
+      });
+    },
   },
 };
 </script>
 
 <style>
+.triangle.right-top:before {
+  content: ' ';
+  position: absolute;
+  width: 0;
+  height: 0;
+  left: auto;
+  right: -20px;
+  top: 0;
+  bottom: auto;
+  border: 32px solid;
+  border-color: blue transparent transparent transparent;
+}
 .v-application--is-ltr
   .v-timeline:not(.v-timeline--dense):not(.v-timeline--reverse)
   .v-timeline-item:nth-child(even):not(.v-timeline-item--after)
@@ -196,10 +287,7 @@ export default {
   .v-timeline-item--before
   .v-timeline-item__body
   > .v-card::after {
-  transform: rotate(0deg);
-  left: -8px;
-  right: initial;
-  top: 0px;
+  display: none;
 }
 
 .v-application--is-ltr
@@ -222,10 +310,7 @@ export default {
   .v-timeline-item--after
   .v-timeline-item__body
   > .v-card::after {
-  transform: rotate(180deg);
-  right: -8px;
-  left: initial;
-  top: 0;
+  display: none;
 }
 .v-timeline::before {
   bottom: 0;
