@@ -1,13 +1,13 @@
 <template>
   <v-container fluid fill-height style="height: 100vh">
-    <v-layout align-center justify-center v-if="!signUp">
+    <v-layout align-center justify-center v-if="!showSignUp">
       <v-flex xs12 sm8 md4>
         <v-card class="elevation-0">
           <v-toolbar-title class="black--text text-center"
             >Welcome to Chat Clique</v-toolbar-title
           >
           <v-card-text>
-            <v-form>
+            <v-form ref="form">
               <v-text-field
                 prepend-icon="mdi-account"
                 name="username"
@@ -46,124 +46,148 @@
             <v-col cols="4" class="text-center mt-3">
               <v-divider />
             </v-col>
-            <v-col cols="4" class="text-center"> or Sign in with </v-col>
+            <v-col cols="4" class="text-center"> or </v-col>
             <v-col cols="4" class="text-center mt-3">
               <v-divider />
             </v-col>
           </v-row>
           <v-card-actions class="justify-center">
-            <v-btn
-              tile
-              color="blue lighten-5 "
-              elevation="0"
-              width="50%"
-              outlined
-            >
-              <v-icon left color="green" class="mr-10"> mdi-google </v-icon>
-              <span class="black--text">Google</span>
+            <v-btn color="blue lighten-5 " elevation="0" outlined rounded>
+              <v-img class="mr-10" src="@/assets/google.png" width="20">
+              </v-img>
+              <span class="black--text font-weight-black"
+                >Continue with Google</span
+              >
             </v-btn>
           </v-card-actions>
+          <div class="mt-5">
+            <v-divider></v-divider>
+
+            <div class="text-center mt-2">
+              <span
+                >Don't have an account?
+                <a
+                  class="black--text font-weight-black"
+                  @click="clearInput(), (showSignUp = true)"
+                  >Sign Up</a
+                >
+              </span>
+            </div>
+          </div>
         </v-card>
       </v-flex>
     </v-layout>
-    <v-layout align-center justify-center v-if="signUp">
+    <v-layout align-center justify-center v-if="showSignUp">
       <v-flex xs12 sm8 md4>
         <v-card class="elevation-0 text-center">
           <v-window v-model="step">
             <v-window-item :value="1">
-              <v-card class="elevation-0">
-                <v-toolbar-title class="black--text text-center"
-                  >Welcome to Chat Clique</v-toolbar-title
-                >
-                <v-card-text>
-                  <v-form>
-                    <v-text-field
-                      prepend-icon="mdi-account"
-                      name="username"
-                      v-model="username"
-                      label="username"
-                      type="text"
-                      color="green darken-1"
-                    ></v-text-field>
-                    <v-text-field
-                      id="password"
-                      prepend-icon="mdi-lock"
-                      name="password"
-                      v-model="password"
-                      label="Password"
-                      type="password"
-                      color="green darken-1"
-                    ></v-text-field>
-                  </v-form>
-                </v-card-text>
-
-                <v-row wrap no-gutters class="ma-6">
-                  <v-col cols="4" class="text-center mt-3">
-                    <v-divider />
-                  </v-col>
-                  <v-col cols="4" class="text-center"> or Sign in with </v-col>
-                  <v-col cols="4" class="text-center mt-3">
-                    <v-divider />
-                  </v-col>
-                </v-row>
-                <v-card-actions class="justify-center">
-                  <v-btn
-                    tile
-                    color="blue lighten-5 "
-                    elevation="0"
-                    width="50%"
-                    outlined
-                  >
-                    <v-icon left color="green" class="mr-10">
-                      mdi-google
-                    </v-icon>
-                    <span class="black--text">Google</span>
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-window-item>
-
-            <v-window-item :value="2">
               <v-card-title class="text-h6 font-weight-regular justify-center">
-                <span>Profile Information</span>
+                <span>{{ currentTitle }}</span>
               </v-card-title>
               <v-card-subtitle class="mt-2 font-weight-regular justify-center">
-                <span
-                  >Please provide your name and an optional profile photo</span
-                >
+                Please provide your profile information and an optional profile
+                photo
               </v-card-subtitle>
-              <v-file-input type="file" ref="fileinput" style="display: none" />
-              <v-btn x-large fab @click="clearFiles">
-                <v-avatar size="48" v-if="imageFile">
-                  <img
-                    alt="Avatar"
-                    src="https://avatars0.githubusercontent.com/u/9064066?v=4&s=460"
-                  />
+
+              <!-- hidden but triggered with JavaScript -->
+              <input
+                ref="uploader"
+                class="d-none"
+                type="file"
+                @input="onFileChanged"
+                accept="image/png, image/jpeg"
+              />
+              <v-btn
+                x-large
+                fab
+                @click="handleFileImport"
+                style="width: 100px; height: 100px"
+              >
+                <v-avatar size="100" v-if="imageFile">
+                  <img alt="Avatar" :src="imageFile" name="Profile Picture" />
                 </v-avatar>
                 <v-icon v-else>mdi-camera-plus</v-icon>
               </v-btn>
-              <v-card-text>
-                <v-text-field
-                  label="Type your name"
-                  color="green darken-1"
-                ></v-text-field>
-              </v-card-text>
+              <v-form ref="form" v-model="step1Valid">
+                <v-card-text>
+                  <v-text-field
+                    label="Type your name"
+                    color="green darken-1"
+                    v-model="name"
+                    :rules="nameRules"
+                    required
+                    name="Name"
+                    clearable
+                  ></v-text-field>
+                  <v-text-field
+                    v-model="email"
+                    :rules="emailRules"
+                    label="E-mail"
+                    required
+                    name="E-mail"
+                    color="green darken-1"
+                  ></v-text-field>
+                </v-card-text>
+              </v-form>
+            </v-window-item>
+            <v-window-item :value="2">
+              <v-card class="elevation-0">
+                <v-card-title
+                  class="text-h6 font-weight-regular justify-center"
+                >
+                  <span>{{ currentTitle }}</span>
+                </v-card-title>
+                <v-card-subtitle
+                  class="mt-2 font-weight-regular justify-center"
+                >
+                  <span>Please provide your username and password </span>
+                </v-card-subtitle>
+
+                <v-card-text>
+                  <v-form ref="form" v-model="step2Valid">
+                    <v-text-field
+                      name="username"
+                      v-model="username"
+                      :rules="nameRules"
+                      required
+                      label="username"
+                      type="text"
+                      color="green darken-1"
+                      append-icon="mdi-autorenew"
+                      @click:append="createUsername"
+                      clearable
+                    ></v-text-field>
+
+                    <v-text-field
+                      id="password"
+                      name="password"
+                      v-model="password"
+                      label="Password"
+                      :type="showPassword ? 'text' : 'password'"
+                      color="green darken-1"
+                      :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                      :rules="passwordRules"
+                      @click:append="showPassword = !showPassword"
+                    ></v-text-field>
+                    <v-progress-linear
+                      :color="passwordScore.color"
+                      :value="passwordScore.value"
+                    ></v-progress-linear>
+                    <v-text-field
+                      label="Confirm Password"
+                      name="Confirm password"
+                      type="password"
+                      color="green darken-1"
+                      v-model="confirmPassword"
+                      :rules="[confirmPasswordRules, passwordConfirmationRule]"
+                    ></v-text-field>
+                  </v-form>
+                </v-card-text>
+              </v-card>
             </v-window-item>
 
             <v-window-item :value="3">
-              <v-card-text>
-                <v-text-field label="Password" type="password"></v-text-field>
-                <v-text-field
-                  label="Confirm Password"
-                  type="password"
-                ></v-text-field>
-                <span class="text-caption grey--text text--darken-1">
-                  Please enter a password for your account
-                </span>
-              </v-card-text>
-            </v-window-item>
-
-            <v-window-item :value="4">
               <div class="pa-4 text-center">
                 <v-img
                   class="mb-4"
@@ -172,7 +196,7 @@
                   src="https://cdn.vuetifyjs.com/images/logos/v.svg"
                 ></v-img>
                 <h3 class="text-h6 font-weight-light mb-2">
-                  Welcome to Vuetify
+                  {{ currentTitle }}
                 </h3>
                 <span class="text-caption grey--text"
                   >Thanks for signing up!</span
@@ -182,13 +206,33 @@
           </v-window>
 
           <v-card-actions>
-            <v-btn :disabled="step === 1" text @click="step--"> Back </v-btn>
+            <v-btn
+              text
+              @click="
+                {
+                  if (step == 1) {
+                    showSignUp = false;
+                    clearInput();
+                  } else step--;
+                }
+              "
+            >
+              Back
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn
-              :disabled="step === 3"
+              v-if="step != 3"
+              :disabled="disableStepper"
               color="primary"
               depressed
-              @click="step++"
+              @click="
+                {
+                  if (step == 2) {
+                    signUp();
+                  } else step++;
+                }
+              "
+              :loading="loading"
             >
               Next
             </v-btn>
@@ -201,15 +245,43 @@
 
 <script>
 import axios from 'axios';
+import zxcvbn from 'zxcvbn';
+
 export default {
   data() {
     return {
+      showTooltip: false,
+      step1Valid: true,
+      step2Valid: true,
+      name: '',
+      email: '',
+      emailRules: [
+        (v) => !!v || 'E-mail is required',
+        (v) => /.+@.+\..+/.test(v) || 'E-mail must be valid',
+      ],
+
       username: '',
+      nameRules: [
+        (v) => !!v || 'Name is required',
+        (v) => v.length >= 5 || 'Name must be atleast 5 characters',
+      ],
       password: '',
+      passwordRules: [
+        (v) => !!v || 'Enter a password',
+        (v) => v.length >= 8 || 'Use 8 characters or more for your password',
+        (v) =>
+          zxcvbn(v).score >= 3 ||
+          'Please choose a stronger password. Try a mix of letters, numbers, and symbols.',
+      ],
+      showPassword: false,
+      confirmPassword: '',
+      confirmPasswordRules: [(v) => !!v || 'Password is required'],
+
       imageFile: null,
       showWrong: false,
-      signUp: false,
+      showSignUp: false,
       step: 1,
+      loading: false,
     };
   },
   methods: {
@@ -236,21 +308,87 @@ export default {
         this.showWrong = true;
       }
     },
+    signUp() {
+      this.loading = true;
+      setTimeout(() => ((this.loading = false), this.step++), 3000);
+    },
     clearFiles() {
       this.$nextTick(() => {
         this.$refs.fileinput.$el.click();
       });
+    },
+    handleFileImport() {
+      this.$refs.uploader.click();
+    },
+    onFileChanged(e) {
+      const file = e.target.files[0];
+      this.imageFile = URL.createObjectURL(file);
+    },
+    createUsername() {
+      const randomNumber = Math.floor(Math.random() * 899);
+      const userMail = this.email.split('@')[0].replace(/[0-9]/g, '');
+      this.username = userMail + randomNumber;
+    },
+    clearInput() {
+      this.username = '';
+      this.password = '';
+      this.email = '';
+      this.imageFile = null;
+      this.name = '';
     },
   },
   computed: {
     currentTitle() {
       switch (this.step) {
         case 1:
-          return 'Sign-up';
+          return 'Profile Information';
         case 2:
-          return 'Create a password';
+          return 'Account Information';
+        case 3:
+          return 'Welcome to Chat Clique';
         default:
           return 'Account created';
+      }
+    },
+    disableStepper() {
+      return (this.step === 1 && !this.step1Valid) ||
+        (this.step === 2 && !this.step2Valid) ||
+        this.step === 3
+        ? true
+        : false;
+    },
+    passwordConfirmationRule() {
+      return this.password === this.confirmPassword || 'Password must match';
+    },
+    passwordScore() {
+      const result = zxcvbn(this.password);
+
+      switch (result.score) {
+        case 4:
+          return {
+            color: 'light-blue',
+            value: 100,
+          };
+        case 3:
+          return {
+            color: 'light-green',
+            value: 75,
+          };
+        case 2:
+          return {
+            color: 'yellow',
+            value: 50,
+          };
+        case 1:
+          return {
+            color: 'orange',
+            value: 25,
+          };
+        default:
+          return {
+            color: 'red',
+            value: 0,
+          };
       }
     },
   },

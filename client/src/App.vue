@@ -61,6 +61,7 @@
           </v-text-field>
 
           <v-divider></v-divider>
+
           <v-list
             three-line
             class="mt-0 pt-0 mb-10"
@@ -105,7 +106,13 @@
                   </span>
 
                   <span>
-                    <v-icon v-if="chat.messages[chat.messages.length - 1].type == 'image'" small>mdi-camera</v-icon>
+                    <v-icon
+                      v-if="
+                        chat.messages[chat.messages.length - 1].type == 'image'
+                      "
+                      small
+                      >mdi-camera</v-icon
+                    >
                     {{ lastMessage(chat) }}
                   </span>
                 </v-list-item-subtitle>
@@ -169,8 +176,12 @@
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </v-app-bar>
-          <v-main hide-overlay >
-            <router-view :chats="chats" :friendChat="friendChat" />
+          <v-main hide-overlay>
+            <router-view
+              @sendMessage="sendMessage"
+              :friendChat="friendChat"
+              :currentChat="currentChat"
+            />
           </v-main>
         </div>
         <div v-else>
@@ -203,35 +214,73 @@ export default {
   data: () => ({
     ws: null,
     search: '',
-    chats: [],
     friendChat: {},
     user: {},
     addFriendDialog: false,
+    messages: [],
   }),
   async created() {
     this.getUser();
     if (this.user.user_id != null) {
-      await this.getChats();
-
       let friendChat = JSON.parse(localStorage.getItem('friendChat'));
       if (friendChat) this.friendChat = friendChat;
+      const server = process.env.VUE_APP_SERVER;
+      const protocol = process.env.VUE_APP_WS_PROTOCOL;
+      this.createWSConnection(protocol, server);
+      this.WebSocketMessages();
     }
   },
   computed: {
     searchChats() {
-      return this.chats.filter((el) =>
+      return this.messages.filter((el) =>
         el.friend[0].username.includes(this.search),
       );
     },
+    currentChat() {
+      return this.messages.filter(
+        (el) => el.chat_id == this.friendChat.chat_id,
+      )[0];
+    },
   },
   methods: {
-    async getChats() {
-      const { data } = await axios({
-        url: `http://localhost:3000/chats/${this.user.user_id}`,
-        method: 'GET',
-      });
-      this.chats = data;
+    sendMessage(data) {
+      this.ws.send(JSON.stringify(data));
     },
+    WebSocketMessages() {
+      this.ws.onmessage = ({ data }) => {
+        var message = JSON.parse(data);
+
+        switch (message.type) {
+          case 'connected':
+            break;
+          case 'disconnected':
+            break;
+          case 'text':
+            this.messages
+              .filter((el) => el.chat_id == this.friendChat.chat_id)[0]
+              .messages.push(message.payload.message);
+            // this.scrollToEnd();
+            break;
+
+          case 'loadMessages':
+            this.messages = message.payload;
+        }
+      };
+    },
+    createWSConnection(protocol, server) {
+      this.ws = new WebSocket(
+        server ? `${protocol}://${server}` : `${protocol}://${location.host}`,
+      );
+      this.ws.onopen = () => {
+        this.ws.send(
+          JSON.stringify({
+            type: 'connected',
+            payload: { user: this.user },
+          }),
+        );
+      };
+    },
+
     async logout() {
       await axios({
         url: 'http://localhost:3000/logout',
@@ -287,6 +336,10 @@ export default {
       if (user != null) {
         this.user = user;
       }
+    },
+    scrollToEnd() {
+      const container = this.$refs['container'];
+      this.$nextTick(() => (container.scrollTop = container.scrollHeight));
     },
   },
 };
