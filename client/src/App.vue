@@ -175,7 +175,8 @@
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </v-app-bar>
-          <v-main hide-overlay>
+
+          <v-main hide-overlay style="height: 100vh">
             <router-view
               @sendMessage="sendMessage"
               :friendChat="friendChat"
@@ -298,28 +299,30 @@ export default {
     //   // );
     // },
     getMessageDate(time) {
-      let dateToday = new Date().toDateString();
-      let longDateYesterday = new Date().toDateString();
+      let today = new Date();
+      let yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
 
-      let today = dateToday.slice(0, dateToday.length - 5);
-      let yesterday = longDateYesterday.slice(0, dateToday.length - 5);
+      const messageTime = new Date(time);
 
-      const messageTime = new Date(time).toDateString();
-
-      let messageDateString = messageTime.slice(0, messageTime.length - 5);
-
-      if (new Date(time).getFullYear() === new Date().getFullYear()) {
-        if (messageDateString === today) {
-          let dateOfLastMessage = new Date(time);
-
-          return `${dateOfLastMessage.getHours()}:${dateOfLastMessage.getMinutes()}`;
-        } else if (messageDateString === yesterday) {
+      if (messageTime.getFullYear() === today.getFullYear()) {
+        if (messageTime.getDay() === today.getDay()) {
+          return `${
+            messageTime.getHours() < 9
+              ? '0' + messageTime.getHours()
+              : messageTime.getHours()
+          }:${
+            messageTime.getMinutes() < 9
+              ? '0' + messageTime.getMinutes()
+              : messageTime.getMinutes()
+          }`;
+        } else if (messageTime.getDay() === yesterday.getDay()) {
           return 'Yesterday';
         } else {
-          return messageDateString;
+          return messageTime.toDateString().slice(0, messageTime.length - 5);
         }
       } else {
-        return messageTime;
+        return messageTime.toDateString();
       }
     },
     lastMessage(chat) {

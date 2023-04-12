@@ -1,7 +1,7 @@
 <template>
-  <div style="overflow: hidden">
-    <v-container fluid style="overflow-y: scroll; height: 89vh" ref="container">
-      <v-timeline color="green" class="mb-9" v-if="currentChat">
+  <div style="overflow: hidden; height: 100%" ref="container">
+    <v-container fluid style="overflow-y: scroll; height: 100%" class="mb-0 pb-0">
+      <v-timeline color="green" class="mb-0 pb-0" v-if="currentChat">
         <v-timeline-item
           v-for="message in currentChat.messages"
           :key="message.message_id"
@@ -41,55 +41,55 @@
           </v-card>
         </v-timeline-item>
       </v-timeline>
-      <v-footer padless absolute color="#f0f2f5">
-        <v-btn color="black" dark icon @click="handleFileImport">
-          <v-icon>mdi-paperclip</v-icon>
-        </v-btn>
-
-        <!-- hidden but triggered with JavaScript -->
-        <input
-          ref="uploader"
-          class="d-none"
-          type="file"
-          @input="onFileChanged"
-          accept="image/png, image/jpeg"
-        />
-        <v-file-input
-          v-if="showFile"
-          class="pa-2"
-          solo
-          hide-details
-          flat
-          rounded
-          truncate-length="15"
-          v-model="selectedFile"
-          append-icon="mdi-close"
-          :clearable="false"
-          prepend-icon=""
-          @click:append="closeFileInput()"
-          @keyup.enter="message.length > 0 ? sendMessage() : false"
-        ></v-file-input>
-        <v-text-field
-          v-else
-          class="pa-2"
-          label="send a message"
-          solo
-          hide-details
-          flat
-          rounded
-          v-model="message"
-          @keyup.enter="message.length > 0 ? sendMessage() : false"
-        ></v-text-field>
-        <v-btn
-          color="black"
-          dark
-          icon
-          @click="message.length > 0 ? sendMessage() : false"
-        >
-          <v-icon>mdi-send</v-icon>
-        </v-btn>
-      </v-footer>
     </v-container>
+    <v-footer padless color="#f0f2f5" inset app>
+      <v-btn color="black" dark icon @click="handleFileImport">
+        <v-icon>mdi-paperclip</v-icon>
+      </v-btn>
+
+      <!-- hidden but triggered with JavaScript -->
+      <input
+        ref="uploader"
+        class="d-none"
+        type="file"
+        @input="onFileChanged"
+        accept="image/png, image/jpeg"
+      />
+      <v-file-input
+        v-if="showFile"
+        class="pa-2"
+        solo
+        hide-details
+        flat
+        rounded
+        truncate-length="15"
+        v-model="selectedFile"
+        append-icon="mdi-close"
+        :clearable="false"
+        prepend-icon=""
+        @click:append="closeFileInput()"
+        @keyup.enter="message.length > 0 ? sendMessage() : false"
+      ></v-file-input>
+      <v-text-field
+        v-else
+        class="pa-2"
+        label="send a message"
+        solo
+        hide-details
+        flat
+        rounded
+        v-model="message"
+        @keyup.enter="message.length > 0 ? sendMessage() : false"
+      ></v-text-field>
+      <v-btn
+        color="black"
+        dark
+        icon
+        @click="message.length > 0 ? sendMessage() : false"
+      >
+        <v-icon>mdi-send</v-icon>
+      </v-btn>
+    </v-footer>
   </div>
 </template>
 <script>
@@ -195,17 +195,6 @@ export default {
         reader.onerror = (error) => reject(error);
         return Promise.resolve(reader.result);
       });
-    },
-    methods: {
-      show(e) {
-        e.preventDefault();
-        this.showMenu = false;
-        this.x = e.clientX;
-        this.y = e.clientY;
-        this.$nextTick(() => {
-          this.showMenu = true;
-        });
-      },
     },
   },
 };
