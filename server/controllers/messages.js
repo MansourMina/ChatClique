@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-
+const bcrypt = require('bcrypt');
 const messagesModel = require('../model/messages');
 
 const getMessages = asyncHandler(async (req, res) => {
@@ -33,14 +33,28 @@ const getUsers = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   if (username && password) {
-    const user = await (
-      await messagesModel.getUsers()
-    ).find((el) => el.username === username && el.password === password);
-    if (user) {
+    const user = (await messagesModel.getUsers()).find(
+      (el) => el.username === username || el.email === username,
+    );
+    const comparePassword = await bcrypt.compare(password, user.password);
+
+    if (user && comparePassword) {
       req.session.userId = user.user_id;
       res.status(200).json({ user });
     } else res.status(401).send('Wrong name or password');
   } else res.status(400).send('Login failed');
+});
+
+const register = asyncHandler(async (req, res) => {
+  const { username, password, name, email } = req.body;
+  if (username && password && name && email) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    req.body.password = hashedPassword;
+    req.body.userId = generateUserId();
+    const register = await messagesModel.registerUser(req.body);
+    res.status(200).json(register);
+  } else res.status(400).send('Sign Up failed');
 });
 
 const redirectLogin = (req, res, next) => {
@@ -67,6 +81,11 @@ function generateMessageId() {
   return `${firstNumber.toString()}-${secondNumber.toString()}`;
 }
 
+function generateUserId() {
+  let r = (Math.random() + 1).toString(36).substring(7);
+  return r;
+}
+
 module.exports = {
   getMessages,
   getChatsOfUser,
@@ -76,4 +95,5 @@ module.exports = {
   login,
   generateMessageId,
   logout,
+  register,
 };

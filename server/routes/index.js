@@ -9,6 +9,7 @@ const {
   login,
   getUsersById,
   logout,
+  register,
 } = require('../controllers/messages');
 
 router.get('/messages', getMessages);
@@ -19,5 +20,6 @@ router.get('/logout', logout);
 
 router.post('/messages', postMessage);
 router.post('/login', login);
+router.post('/register', register);
 
 module.exports = router;

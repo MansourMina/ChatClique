@@ -6,7 +6,7 @@
     text-center
     class="pl-0 pr-0"
   >
-    <v-layout align-center justify-center v-if="!signUp">
+    <v-layout align-center justify-center>
       <v-flex xs12 sm8 md4>
         <v-card class="elevation-0" color="transparent">
           <v-card-text>
@@ -20,7 +20,12 @@
         </v-card>
       </v-flex>
     </v-layout>
-    <v-sheet color="green accent-3" elevation="1" height="8" width="120%" ></v-sheet>
+    <v-sheet
+      color="green accent-3"
+      elevation="1"
+      height="8"
+      width="120%"
+    ></v-sheet>
   </v-container>
 </template>
 

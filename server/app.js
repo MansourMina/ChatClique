@@ -22,16 +22,9 @@ app.use(cors());
 app.use(helmet());
 const { NODE_ENV, SESSION_LIFETIME, SESSION_NAME } = process.env;
 
-app.use(express.json());
-app.use(express.json({ limit: '200mb', extended: true }));
-app.use(
-  express.urlencoded({
-    limit: '200mb',
-    extended: true,
-    parameterLimit: 100000,
-  }),
-);
-app.use(express.text({ limit: '200mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.text({ limit: '50mb' }));
 
 app.use(express.static(path.join(__dirname, '/public')));
 app.use(history());

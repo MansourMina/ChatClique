@@ -12,7 +12,7 @@
                 prepend-icon="mdi-account"
                 name="username"
                 v-model="username"
-                label="username"
+                label="username or email"
                 type="text"
                 color="green darken-1"
                 @keyup.enter="login()"
@@ -206,11 +206,11 @@
           </v-window>
 
           <v-card-actions>
-            <v-btn
+            <v-btn v-if="step != 3"
               text
               @click="
                 {
-                  if (step == 1) {
+                  if (step == 1 || step == 3) {
                     showSignUp = false;
                     clearInput();
                   } else step--;
@@ -235,6 +235,14 @@
               :loading="loading"
             >
               Next
+            </v-btn>
+            <v-btn
+              v-if="step == 3"
+              color="primary"
+              depressed
+              @click="showSignUp = false"
+            >
+              Log In
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -308,9 +316,26 @@ export default {
         this.showWrong = true;
       }
     },
-    signUp() {
+    async signUp() {
       this.loading = true;
-      setTimeout(() => ((this.loading = false), this.step++), 3000);
+      try {
+        await axios({
+          url: 'http://localhost:3000/register',
+          method: 'POST',
+          data: {
+            name: this.name,
+            username: this.username,
+            email: this.email,
+            password: this.password,
+            image: this.imageFile,
+          },
+        });
+        this.loading = false;
+        this.step++;
+        this.clearInput();
+      } catch (err) {
+        this.loading = false;
+      }
     },
     clearFiles() {
       this.$nextTick(() => {
@@ -320,13 +345,16 @@ export default {
     handleFileImport() {
       this.$refs.uploader.click();
     },
-    onFileChanged(e) {
+    async onFileChanged(e) {
       const file = e.target.files[0];
-      this.imageFile = URL.createObjectURL(file);
+
+      await this.getBase64(file).then((data) => {
+        this.imageFile = data;
+      });
     },
     createUsername() {
       const randomNumber = Math.floor(Math.random() * 899);
-      const userMail = this.email.split('@')[0].replace(/[0-9]/g, '');
+      const userMail = this.email.split('@')[0];
       this.username = userMail + randomNumber;
     },
     clearInput() {
@@ -335,6 +363,15 @@ export default {
       this.email = '';
       this.imageFile = null;
       this.name = '';
+    },
+    getBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        return Promise.resolve(reader.result);
+      });
     },
   },
   computed: {

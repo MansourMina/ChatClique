@@ -6,12 +6,9 @@
           <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
             <v-list color="transparent" class="pa-3">
               <v-list-item class="mt-4">
-                <v-list-item-avatar>
-                  <v-img
-                    src="./assets/placeholder.jpg"
-                    height="40"
-                    width="20"
-                  ></v-img>
+                <v-list-item-avatar size="50">
+                  <v-img v-if="user.image" :src="user.image"></v-img>
+                  <v-img v-else src="@/assets/placeholder.jpg"></v-img>
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title class="text-h6 white--text">
@@ -85,10 +82,12 @@
               :key="chat.user_id"
               @click="setFriendChat(chat)"
             >
-              <v-list-item-avatar>
+              <v-list-item-avatar class="mt-6">
                 <v-img
-                  src="https://randomuser.me/api/portraits/women/85.jpg"
+                  v-if="chat.friend[0].image"
+                  :src="chat.friend[0].image"
                 ></v-img>
+                <v-img v-else src="@/assets/placeholder.jpg"></v-img>
               </v-list-item-avatar>
 
               <v-list-item-content>
@@ -150,10 +149,10 @@
             <v-list-item>
               <v-list-item-avatar>
                 <v-img
-                  src="./assets/placeholder.jpg"
-                  height="40"
-                  width="20"
+                  v-if="friendChat.friend[0].image"
+                  :src="friendChat.friend[0].image"
                 ></v-img>
+                <v-img v-else src="@/assets/placeholder.jpg"></v-img>
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title class="text-h6 white--text">

@@ -8,7 +8,7 @@ async function getMessages() {
 async function getChatsOfUser(userId) {
   const { rows } = await db.query(
     `SELECT CASE
-           WHEN f.user1_id = $1 THEN (u2.username, u2.user_id)
+           WHEN f.user1_id = $1 THEN (u2.username, u2.user_id, u2.image)
            ELSE (u1.username, u1.user_id)
            END as friend,
        chat_name, c.chat_id,
@@ -31,7 +31,13 @@ GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name,c.
     el.friend = el.friend.replace('(', '');
     el.friend = el.friend.replace(')', '');
     let splittedFriend = el.friend.split(',');
-    el.friend = [{ username: splittedFriend[0], user_id: splittedFriend[1] }];
+    el.friend = [
+      {
+        username: splittedFriend[0],
+        user_id: splittedFriend[1],
+        image: splittedFriend[2],
+      },
+    ];
 
     el.messages.forEach((m) => {
       m.send_date = new Date(m.send_date);
@@ -70,10 +76,26 @@ async function getUsers() {
   const { rows } = await db.query('SELECT * from users ');
   return rows;
 }
+
+async function registerUser(body) {
+  const { rows } = await db.query(
+    'INSERT INTO users (user_id, username, email, password, name, image) VALUES ($1, $2, $3, $4, $5, $6)',
+    [
+      body.userId,
+      body.username,
+      body.email,
+      body.password,
+      body.name,
+      body.image,
+    ],
+  );
+  return rows[0];
+}
 module.exports = {
   getMessages,
   getChatsOfUser,
   postMessage,
   getUsersById,
   getUsers,
+  registerUser,
 };
