@@ -20,28 +20,26 @@ const postMessage = asyncHandler(async (req, res) => {
   res.status(200).json(message);
 });
 
-const getUsersById = asyncHandler(async (req, res) => {
-  const users = await messagesModel.getUsers(req.params.userId);
-  res.status(200).json(users);
-  // else res.status(204).send('No Messages available!');
+const postRequest = asyncHandler(async (req, res) => {
+  const request = await messagesModel.postRequest(req.body);
+  res.status(200).json(request);
 });
+
 const getUsers = asyncHandler(async (req, res) => {
   const users = await messagesModel.getUsers();
   res.status(200).json(users);
-  // else res.status(204).send('No Messages available!');
 });
 const login = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
-  if (username && password) {
-    const user = (await messagesModel.getUsers()).find(
-      (el) => el.username === username || el.email === username,
-    );
-    const comparePassword = await bcrypt.compare(password, user.password);
-
-    if (user && comparePassword) {
-      req.session.userId = user.user_id;
-      res.status(200).json({ user });
-    } else res.status(401).send('Wrong name or password');
+  const { email, password } = req.body;
+  if (email && password) {
+    const user = await messagesModel.getUsersByEmail(email);
+    if (user) {
+      const comparePassword = await bcrypt.compare(password, user.password);
+      if (comparePassword) {
+        req.session.userId = user.user_id;
+        res.status(200).json({ user });
+      } else res.status(401).send('Wrong email or password');
+    } else res.status(401).send('Wrong email or password');
   } else res.status(400).send('Login failed');
 });
 
@@ -51,7 +49,7 @@ const register = asyncHandler(async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
     req.body.password = hashedPassword;
-    req.body.userId = generateUserId();
+    req.body.userId = await generateUserId();
     const register = await messagesModel.registerUser(req.body);
     res.status(200).json(register);
   } else res.status(400).send('Sign Up failed');
@@ -81,9 +79,18 @@ function generateMessageId() {
   return `${firstNumber.toString()}-${secondNumber.toString()}`;
 }
 
-function generateUserId() {
-  let r = (Math.random() + 1).toString(36).substring(7);
-  return r;
+async function generateUserId() {
+  let users = await messagesModel.getUsers();
+  let allUser_IDS = users.map((el) => el.user_id);
+
+  function randomNumber() {
+    let randomID = Math.floor(Math.random() * (9999 - 1000));
+    if (allUser_IDS.find((el) => el == randomID)) return randomNumber();
+    else return randomID;
+  }
+
+  let id = randomNumber();
+  return id;
 }
 
 module.exports = {
@@ -91,9 +98,9 @@ module.exports = {
   getChatsOfUser,
   postMessage,
   getUsers,
-  getUsersById,
   login,
   generateMessageId,
   logout,
   register,
+  postRequest,
 };

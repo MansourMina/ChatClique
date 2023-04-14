@@ -2,7 +2,7 @@
   <v-app>
     <div v-if="user.user_id">
       <v-card tile id="application">
-        <v-navigation-drawer width="30%" statless app>
+        <v-navigation-drawer width="30%" statless app v-if="!addFriendDialog">
           <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
             <v-list color="transparent" class="pa-3">
               <v-list-item class="mt-4">
@@ -12,11 +12,14 @@
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title class="text-h6 white--text">
-                    {{ user.username }}
+                    {{ user.name }}
                   </v-list-item-title>
-                  <v-list-item-subtitle class="white--text">{{
-                    user.email
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle class="white--text">
+                    {{ user.username
+                    }}<span class="text--disabled font-weight-black"
+                      >#{{ user.user_id }}
+                    </span>
+                  </v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
             </v-list>
@@ -49,10 +52,8 @@
               <v-icon class="ml-2 mr-3">mdi-magnify</v-icon>
             </template>
             <template v-slot:append-outer>
-              <v-btn icon @click="addFriendDialog = true"
-                ><v-icon class="ml-2 mr-3"
-                  >mdi-account-multiple-plus-outline</v-icon
-                ></v-btn
+              <v-btn icon class="ml-2 mr-3" @click="addFriendDialog = true"
+                ><v-icon>mdi-account-multiple-plus-outline</v-icon></v-btn
               >
             </template>
           </v-text-field>
@@ -64,6 +65,7 @@
             class="mt-0 pt-0 mb-10"
             style="overflow-y: scroll"
             max-height="80vh"
+            v-if="messages"
           >
             <!-- <v-subheader v-if="item.header" :key="item.header"></v-subheader> -->
 
@@ -134,6 +136,13 @@
             </v-list-item>
           </v-list>
         </v-navigation-drawer>
+        <addFriend
+          v-else
+          @close="addFriendDialog = false"
+          :users="users"
+          :ownUser="user"
+          @addFriend="addFriend"
+        />
 
         <div v-if="friendChat.friend">
           <v-app-bar
@@ -193,9 +202,6 @@
     <div v-else>
       <v-main><Login /></v-main>
     </div>
-    <v-dialog v-model="addFriendDialog" max-width="100vh" hide-overlay>
-      <addFriend @close="addFriendDialog = false" />
-    </v-dialog>
   </v-app>
 </template>
 
@@ -218,6 +224,7 @@ export default {
     user: {},
     addFriendDialog: false,
     messages: [],
+    users: [],
   }),
   async created() {
     this.getUser();
@@ -228,6 +235,7 @@ export default {
       const protocol = process.env.VUE_APP_WS_PROTOCOL;
       this.createWSConnection(protocol, server);
       this.WebSocketMessages();
+      await this.getUsers();
     }
   },
   computed: {
@@ -280,7 +288,12 @@ export default {
         );
       };
     },
-
+    async getUsers() {
+      const { data } = await axios({
+        url: 'http://localhost:3000/users',
+      });
+      this.users = data;
+    },
     async logout() {
       await axios({
         url: 'http://localhost:3000/logout',
@@ -290,14 +303,18 @@ export default {
       this.$router.push('/');
       this.$router.go();
     },
-    // setUserStatus(data) {
-    //   let { user } = data;
-    //   // console.log(this.chats);
-
-    //   // console.log(
-    //   //   this.chats.find((el) => el.friend[0].user_id == user.user_id),
-    //   // );
-    // },
+    async addFriend(friend) {
+      await axios({
+        url: 'http://localhost:3000/request',
+        method: 'POST',
+        data: {
+          from_user_id: this.user.user_id,
+          to_user_id: friend.user_id,
+          requested_date: new Date(),
+          status: 'requested'
+        },
+      });
+    },
     getMessageDate(time) {
       let today = new Date();
       let yesterday = new Date();

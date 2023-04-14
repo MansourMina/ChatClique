@@ -65,15 +65,18 @@ async function postMessage(body) {
   return rows[0];
 }
 
-async function getUsersById(user_id) {
-  const { rows } = await db.query('SELECT * from users where user_id = $1', [
-    user_id,
-  ]);
+async function getUsersByEmail(email) {
+  const { rows } = await db.query(
+    'SELECT username, name, user_id, email, password from users where email = $1',
+    [email],
+  );
   return rows[0];
 }
 
 async function getUsers() {
-  const { rows } = await db.query('SELECT * from users ');
+  const { rows } = await db.query(
+    'SELECT username, name, user_id, email from users ',
+  );
   return rows;
 }
 
@@ -91,11 +94,20 @@ async function registerUser(body) {
   );
   return rows[0];
 }
+
+async function postRequest(body) {
+  const { rows } = await db.query(
+    'INSERT INTO friendship_requests (from_user_id,to_user_id,requested_date, status) VALUES ($1, $2, $3, $4);',
+    [body.from_user_id, body.to_user_id, body.requested_date, body.status],
+  );
+  return rows[0];
+}
 module.exports = {
   getMessages,
   getChatsOfUser,
   postMessage,
-  getUsersById,
+  getUsersByEmail,
   getUsers,
   registerUser,
+  postRequest,
 };

@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer width="25%" statless app>
+  <v-navigation-drawer width="30%" statless app>
     <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
       <v-list color="transparent" class="pl-0 ml-0">
         <v-list-item class="mt-4 pl-0 ml-0">
@@ -16,7 +16,7 @@
     </v-app-bar>
 
     <v-text-field
-      placeholder="Suchen oder neuen Chat beginnen"
+      placeholder="username#0000 "
       class="pa-4"
       hide-details
       clearable
@@ -28,75 +28,58 @@
     </v-text-field>
 
     <v-divider></v-divider>
+
     <v-list
       three-line
-      class="mt-0 pt-0 mb-10"
+      class="mt-0 pt-0"
       style="overflow-y: scroll"
       max-height="80vh"
+      v-for="user in searchUser"
+      :key="user.user_id"
     >
-      <!-- <v-subheader v-if="item.header" :key="item.header"></v-subheader> -->
-
-      <!-- <v-divider
-                v-else-if="item.divider"
-                :key="index"
-                :inset="item.inset"
-              ></v-divider> -->
-
-      <!-- <v-list-item
-        link
-        :class="`pl-4 pr-3 ${
-          friendChat.chat_id == chat.chat_id ? 'blue-grey lighten-5' : ''
-        }`"
-        v-for="chat in searchChats"
-        :key="chat.user_id"
-        @click="setFriendChat(chat)"
-      >
-        <v-list-item-avatar>
-          <v-img src="https://randomuser.me/api/portraits/women/85.jpg"></v-img>
+      <v-list-item>
+        <v-list-item-avatar class="mt-6">
+          <v-img src="@/assets/placeholder.jpg"></v-img>
         </v-list-item-avatar>
-
         <v-list-item-content>
-          <v-list-item-title>{{ chat.friend[0].username }}</v-list-item-title>
-          <v-list-item-subtitle>
-            <span class="font-weight-bold">
-              {{
-                chat.messages[chat.messages.length - 1].user_id == user.user_id
-                  ? 'You:'
-                  : ''
-              }}
-            </span>
-
-            {{
-              chat.messages[chat.messages.length - 1].message
-            }}</v-list-item-subtitle
-          >
+          <v-list-item-title>{{ user.username }}</v-list-item-title>
         </v-list-item-content>
-        <v-list-item-action>
-          <p>
-            <v-list-item-action-text>
-              {{
-                getMessageDate(
-                  chat.messages[chat.messages.length - 1].send_date,
-                )
-              }}</v-list-item-action-text
+        <v-list-item-action class="mt-6">
+          <v-list-item-action-text>
+            <v-btn icon @click="$emit('addFriend', user)"
+              ><v-icon>mdi-account-plus-outline</v-icon></v-btn
             >
-          </p>
-
-          <v-badge color="green" class="mr-3 ml-5 mt-3">
-            <span slot="badge">{{ 2 }}</span>
-          </v-badge>
+          </v-list-item-action-text>
         </v-list-item-action>
-      </v-list-item> -->
+      </v-list-item>
     </v-list>
   </v-navigation-drawer>
 </template>
 
 <script>
 export default {
+  props: {
+    users: {
+      type: Array,
+    },
+    ownUser: {
+      type: Object,
+    },
+  },
   data() {
     return {
       searchAddNewFriend: '',
     };
+  },
+  computed: {
+    searchUser() {
+      return this.users.filter(
+        (el) =>
+          `${el.username.toLowerCase()}#${el.user_id}` ==
+            this.searchAddNewFriend.toLowerCase() &&
+          el.user_id != this.ownUser.user_id,
+      );
+    },
   },
 };
 </script>

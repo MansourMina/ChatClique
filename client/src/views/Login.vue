@@ -10,9 +10,9 @@
             <v-form ref="form">
               <v-text-field
                 prepend-icon="mdi-account"
-                name="username"
-                v-model="username"
-                label="username or email"
+                name="email"
+                v-model="email"
+                label="Email"
                 type="text"
                 color="green darken-1"
                 @keyup.enter="login()"
@@ -206,7 +206,8 @@
           </v-window>
 
           <v-card-actions>
-            <v-btn v-if="step != 3"
+            <v-btn
+              v-if="step != 3"
               text
               @click="
                 {
@@ -240,7 +241,10 @@
               v-if="step == 3"
               color="primary"
               depressed
-              @click="showSignUp = false"
+              @click="
+                showSignUp = false;
+                step = 0;
+              "
             >
               Log In
             </v-btn>
@@ -300,7 +304,7 @@ export default {
           method: 'POST',
           contentType: 'application/json',
           data: {
-            username: this.username,
+            email: this.email,
             password: this.password,
           },
         });

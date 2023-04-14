@@ -1,6 +1,10 @@
 <template>
   <div style="overflow: hidden; height: 100%" ref="container">
-    <v-container fluid style="overflow-y: scroll; height: 100%" class="mb-0 pb-0">
+    <v-container
+      fluid
+      style="overflow-y: scroll; height: 100%"
+      class="mb-0 pb-0"
+    >
       <v-timeline color="green" class="mb-0 pb-0" v-if="currentChat">
         <v-timeline-item
           v-for="message in currentChat.messages"
@@ -30,7 +34,10 @@
             </v-card-text>
             <v-img
               v-if="message.type == 'image'"
+              max-width="350"
               :src="message.message"
+              @click="(openImage = true), (imageToOpen = message.message)"
+              style="cursor: pointer"
             ></v-img>
             <span
               class="text-caption grey--text text--darken-1 float-right mr-2"
@@ -90,9 +97,18 @@
         <v-icon>mdi-send</v-icon>
       </v-btn>
     </v-footer>
+    <v-dialog
+      v-model="openImage"
+      max-height="700"
+      max-width="800"
+      content-class="elevation-0"
+    >
+      <openImage :image="imageToOpen" @close="openImage = false" />
+    </v-dialog>
   </div>
 </template>
 <script>
+import openImage from '@/components/openImage.vue';
 export default {
   name: 'MessageViewBody',
   props: {
@@ -102,6 +118,9 @@ export default {
     currentChat: {
       type: Object,
     },
+  },
+  components: {
+    openImage,
   },
 
   created() {
@@ -114,9 +133,8 @@ export default {
       selectedFile: null,
       showFile: false,
       messageToSend: 'text',
-      showMenu: false,
-      x: 0,
-      y: 0,
+      imageToOpen: '',
+      openImage: false,
     };
   },
 
@@ -184,9 +202,7 @@ export default {
       this.messageToSend = 'text';
       this.message = '';
     },
-    getSizeOfImage(img) {
-      return { width: img.width, height: img.height };
-    },
+
     getBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
