@@ -1,30 +1,30 @@
 <template>
-  <div style="overflow: hidden; height: 100%" ref="container">
+  <div style="overflow: hidden; height: 100%">
     <v-container
       fluid
       style="overflow-y: scroll; height: 100%"
-      class="mb-0 pb-0"
+      class="pb-0"
+      ref="container"
+      v-if="currentChat.messages.length > 0"
     >
-      <v-timeline color="green" class="mb-0 pb-0" v-if="currentChat">
+      <v-timeline color="green" class="mb-0 pb-0">
         <v-timeline-item
           v-for="message in currentChat.messages"
           :key="message.message_id"
           color="red lighten-2"
           hide-dot
-          :left="message.user_id != user.user_id"
-          :right="message.user_id == user.user_id"
+          :left="message.sender_id != user.user_id"
+          :right="message.sender_id == user.user_id"
           :style="`text-align: ${
-            message.user_id == user.user_id ? 'right' : 'left'
+            message.sender_id == user.user_id ? 'right' : 'left'
           } `"
           ref="chat"
         >
           <v-card
             class="elevation-3 d-inline-block"
             max-width="100%"
-            :color="message.user_id == user.user_id ? '#d9fdd3' : 'white'"
-            :style="`text-align: ${
-              message.user_id == user.user_id ? 'right' : 'left'
-            } `"
+            :color="message.sender_id == user.user_id ? '#d9fdd3' : 'white'"
+            style="text-align: left"
           >
             <v-card-text
               class="pt-2 black--text mb-0 pb-0"
@@ -36,15 +36,26 @@
               v-if="message.type == 'image'"
               max-width="350"
               :src="message.message"
-              @click="(openImage = true), (imageToOpen = message.message)"
+              @click="$emit('openImage', message.message)"
               style="cursor: pointer"
             ></v-img>
-            <span
-              class="text-caption grey--text text--darken-1 float-right mr-2"
-              style="font-size: 0.65rem !important"
-            >
-              {{ time(message.send_date) }}
-            </span>
+            <div class="float-right mr-1">
+              <span
+                class="text-caption grey--text text--darken-1 ml-2"
+                style="font-size: 0.65rem !important"
+              >
+                {{ time(message.send_date) }}
+              </span>
+              <span v-if="message.sender_id == user.user_id">
+                <v-icon
+                  small
+                  v-if="message.receiver_read"
+                  color="green accent-4"
+                  >mdi-check-all</v-icon
+                >
+                <v-icon small v-else>mdi-check-all</v-icon>
+              </span>
+            </div>
           </v-card>
         </v-timeline-item>
       </v-timeline>
@@ -97,31 +108,17 @@
         <v-icon>mdi-send</v-icon>
       </v-btn>
     </v-footer>
-    <v-dialog
-      v-model="openImage"
-      max-height="700"
-      max-width="800"
-      content-class="elevation-0"
-    >
-      <openImage :image="imageToOpen" @close="openImage = false" />
-    </v-dialog>
   </div>
 </template>
 <script>
-import openImage from '@/components/openImage.vue';
 export default {
   name: 'MessageViewBody',
   props: {
-    friendChat: {
-      type: Object,
-    },
     currentChat: {
       type: Object,
     },
   },
-  components: {
-    openImage,
-  },
+  components: {},
 
   created() {
     this.getUser();
@@ -133,8 +130,6 @@ export default {
       selectedFile: null,
       showFile: false,
       messageToSend: 'text',
-      imageToOpen: '',
-      openImage: false,
     };
   },
 
@@ -148,21 +143,22 @@ export default {
     sendMessage() {
       let data = {
         sender: this.user,
-        receiver: this.friendChat.friend[0],
+        receiver: this.currentChat.friend[0],
         message: {
-          user_id: this.user.user_id,
-          chat_id: this.friendChat.chat_id,
+          sender_id: this.user.user_id,
+          chat_id: this.currentChat.chat_id,
           send_date: new Date(),
           type: this.messageToSend,
           message: this.message,
+          receiver_read: false,
         },
       };
+      this.scrollToEnd();
       this.$emit('sendMessage', {
         type: 'message',
         art: this.messageToSend,
         payload: data,
       });
-      this.scrollToEnd();
 
       this.message = '';
       this.messageToSend = 'text';
@@ -181,10 +177,7 @@ export default {
       }`;
       return timeOfMessage;
     },
-    scrollToEnd() {
-      const container = this.$refs['container'];
-      this.$nextTick(() => (container.scrollTop = container.scrollHeight));
-    },
+
     handleFileImport() {
       this.showFile = true;
       this.$refs.uploader.click();
@@ -196,6 +189,11 @@ export default {
       await this.getBase64(this.selectedFile).then((data) => {
         this.message = data;
       });
+    },
+    scrollToEnd() {
+      const container = this.$refs['container'];
+      if (container)
+        this.$nextTick(() => (container.scrollTop = container.scrollHeight));
     },
     closeFileInput() {
       this.showFile = false;

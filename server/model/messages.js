@@ -7,59 +7,58 @@ async function getMessages() {
 
 async function getChatsOfUser(userId) {
   const { rows } = await db.query(
-    `SELECT CASE
-           WHEN f.user1_id = $1 THEN (u2.username, u2.user_id, u2.image)
-           ELSE (u1.username, u1.user_id)
-           END as friend,
-       chat_name, c.chat_id,
-       json_agg(json_build_object('message_id',m.message_id,'username', sender.username, 'user_id', sender.user_id, 'send_date', send_date, 'message',
-                                  m.text, 'type', m.type)) AS messages
+    `SELECT  user_friend.username as friend_username, user_friend.user_id as friend_user_id, user_friend.image as friend_image,
+       c.chat_id,
+       COUNT(m.receiver_read) FILTER (where m.receiver_read = false and m.sender_id != $1)                                 AS unread,
+       json_agg(json_build_object('message_id', m.message_id, 'username', sender.username, 'sender_id', sender.user_id,
+                                  'send_date', send_date, 'receiver_read', receiver_read,  'type',type, 'message',
+                                  m.text))                                                           AS messages
+
 FROM friendships f
-         JOIN users u1 ON f.user1_id = u1.user_id
-         JOIN users u2 ON f.user2_id = u2.user_id
-         JOIN chat_friendships cf on f.friendships_id = cf.friendship_id
+         JOIN chat_friendships cf on f.friendship_id = cf.friendship_id
          JOIN chats c on cf.chat_id = c.chat_id
-         JOIN messages m on c.chat_id = m.chat_id
-         JOIN users sender on sender.user_id = m.user_id
-WHERE
-    (f.user1_id = $1 OR f.user2_id = $1)
-GROUP BY f.user1_id,u2.username, u2.user_id,u1.username, u1.user_id,chat_name,c.chat_id `,
+          LEFT JOIN messages m on c.chat_id = m.chat_id
+          LEFT JOIN users sender on sender.user_id = m.sender_id
+          JOIN users user_friend
+              on user_friend.user_id = (SELECT Case when f.user1_id = $1 then f.user2_id else f.user1_id end)
+
+WHERE (f.user1_id = $1 OR f.user2_id = $1)
+GROUP BY c.chat_id,user_friend.username, user_friend.user_id `,
     [userId],
   );
 
   rows.forEach((el) => {
-    el.friend = el.friend.replace('(', '');
-    el.friend = el.friend.replace(')', '');
-    let splittedFriend = el.friend.split(',');
     el.friend = [
       {
-        username: splittedFriend[0],
-        user_id: splittedFriend[1],
-        image: splittedFriend[2],
+        username: el.friend_username,
+        user_id: el.friend_user_id,
+        image: el.friend_image,
       },
     ];
-
-    el.messages.forEach((m) => {
-      m.send_date = new Date(m.send_date);
-      ownMessage = false;
-      if (m.user_id === userId) m.ownMessage = true;
-      else m.ownMessage = false;
-    });
-    el.messages = el.messages.sort((a, b) => a.send_date - b.send_date);
+    delete el.friend_username;
+    delete el.friend_user_id;
+    delete el.friend_image;
+    if (!el.messages[0].message_id) el.messages = [];
+    else
+      el.messages = el.messages.sort(
+        (a, b) => new Date(a.send_date) - new Date(b.send_date),
+      );
   });
+
   return rows;
 }
 
 async function postMessage(body) {
   const { rows } = await db.query(
-    'INSERT INTO messages (message_id,text, send_date, user_id, chat_id, type) VALUES ($1, $2, $3, $4,$5, $6);',
+    'INSERT INTO messages (message_id,text, send_date, sender_id, chat_id, type, receiver_read) VALUES ($1, $2, $3, $4,$5, $6, $7);',
     [
       body.message_id,
       body.message,
       body.send_date,
-      body.user_id,
+      body.sender_id,
       body.chat_id,
       body.type,
+      false,
     ],
   );
   return rows[0];
@@ -67,7 +66,7 @@ async function postMessage(body) {
 
 async function getUsersByEmail(email) {
   const { rows } = await db.query(
-    'SELECT username, name, user_id, email, password from users where email = $1',
+    'SELECT username, name, user_id, email, image, password from users where email = $1',
     [email],
   );
   return rows[0];
@@ -102,12 +101,73 @@ async function postRequest(body) {
   );
   return rows[0];
 }
+async function delRequest(request_id) {
+  const { rows } = await db.query(
+    'DELETE from friendship_requests where request_id = $1',
+    [request_id],
+  );
+  return rows[0];
+}
+async function addFriendship(body) {
+  const { rows } = await db.query(
+    'INSERT INTO friendships (user1_id, user2_id) VALUES ($1, $2) returning friendship_id',
+    [body.user1_id, body.user2_id],
+  );
+  return rows[0];
+}
+
+async function addChat(date) {
+  const { rows } = await db.query(
+    'INSERT INTO chats (created_date) VALUES ($1) returning chat_id',
+    [date],
+  );
+  return rows[0];
+}
+
+async function addChatFriendship(chat_id, friendship_id) {
+  const { rows } = await db.query(
+    'INSERT INTO chat_friendships (chat_id, friendship_id) VALUES ($1, $2) returning chat_friendship_id',
+    [chat_id, friendship_id],
+  );
+  return rows[0];
+}
+async function getRequests(user_id) {
+  const { rows } = await db.query(
+    `SELECT request_id,
+       from_user_id,
+       to_user_id,
+       requested_date,
+       status,
+       username as requested_username,
+       name as requested_name
+from friendship_requests
+         JOIN users ON from_user_id = user_id where to_user_id = $1`,
+    [user_id],
+  );
+  return rows;
+}
+
+async function getFriends(user_id) {
+  const { rows } = await db.query(
+    `SELECT 
+from friendships
+         JOIN users ON from_user_id = user_id where user1_id = $1 or user2_id = $1`,
+    [user_id],
+  );
+  return rows;
+}
 module.exports = {
-  getMessages,
   getChatsOfUser,
   postMessage,
   getUsersByEmail,
   getUsers,
   registerUser,
   postRequest,
+  getRequests,
+  delRequest,
+  addFriendship,
+  getFriends,
+  getMessages,
+  addChatFriendship,
+  addChat,
 };

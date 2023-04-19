@@ -10,7 +10,7 @@
       ><v-img
         :src="image"
         max-width="800"
-        max-height="600"
+        max-height="590"
         class="mx-auto"
         contain
     /></v-container>

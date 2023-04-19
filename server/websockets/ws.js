@@ -12,6 +12,9 @@ function wsServer(httpServer) {
       if (data.type == 'message') {
         sendMessage(data.payload);
       }
+      // if (data.type == 'unread count up') {
+      //   unreadCountUp(data.payload);
+      // }
     });
 
     ws.on('close', () => {
@@ -31,6 +34,7 @@ function wsServer(httpServer) {
 }
 
 function sendMessage(payload) {
+  console.log(payload)
   connections.forEach((el) => {
     if (
       el.connection.user.user_id == payload.receiver.user_id ||
@@ -53,6 +57,13 @@ function sendMessage(payload) {
     .then()
     .catch(function () {});
 }
+
+// function unreadCountUp(payload) {
+//   axios
+//     .patch('http://localhost:3000/messages/' + payload.message.chat_id, payload.message)
+//     .then()
+//     .catch(function () {});
+// }
 
 async function registerConnection(ws, user) {
   // send status to client

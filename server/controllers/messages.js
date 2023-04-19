@@ -2,16 +2,11 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 const messagesModel = require('../model/messages');
 
-const getMessages = asyncHandler(async (req, res) => {
-  const messages = await messagesModel.getMessages();
-  if (messages.length > 0) res.status(200).json(messages);
-  else res.status(204).send('No Messages available!');
-});
-
 const getChatsOfUser = asyncHandler(async (req, res) => {
-  const chats = await messagesModel.getChatsOfUser(req.params.userId);
-  if (chats.length > 0) res.status(200).json(chats);
-  else res.status(204).send('No Chats found!');
+  let chats = await messagesModel.getChatsOfUser(req.params.userId);
+  if (chats.length > 0) {
+    res.status(200).json(chats);
+  } else res.status(204).send('No Chats found!');
 });
 
 const postMessage = asyncHandler(async (req, res) => {
@@ -28,6 +23,24 @@ const postRequest = asyncHandler(async (req, res) => {
 const getUsers = asyncHandler(async (req, res) => {
   const users = await messagesModel.getUsers();
   res.status(200).json(users);
+});
+
+const getRequests = asyncHandler(async (req, res) => {
+  const requests = await messagesModel.getRequests(req.params.userId);
+  res.status(200).json(requests);
+});
+
+const getFriends = asyncHandler(async (req, res) => {
+  const friends = await messagesModel.getFriends(req.params.userId);
+  res.status(200).json(friends);
+});
+
+const addFriendship = asyncHandler(async (req, res) => {
+  await messagesModel.delRequest(req.body.request_id);
+  const friendship = await messagesModel.addFriendship(req.body);
+  const chat = await messagesModel.addChat(req.body.date);
+  await messagesModel.addChatFriendship(chat.chat_id, friendship.friendship_id);
+  res.status(200).json(friendship);
 });
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -94,7 +107,6 @@ async function generateUserId() {
 }
 
 module.exports = {
-  getMessages,
   getChatsOfUser,
   postMessage,
   getUsers,
@@ -103,4 +115,7 @@ module.exports = {
   logout,
   register,
   postRequest,
+  getRequests,
+  addFriendship,
+  getFriends,
 };

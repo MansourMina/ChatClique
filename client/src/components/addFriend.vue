@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer width="30%" statless app>
+  <div>
     <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
       <v-list color="transparent" class="pl-0 ml-0">
         <v-list-item class="mt-4 pl-0 ml-0">
@@ -53,7 +53,7 @@
         </v-list-item-action>
       </v-list-item>
     </v-list>
-  </v-navigation-drawer>
+  </div>
 </template>
 
 <script>
