@@ -1,7 +1,7 @@
 const db = require('../db');
 
 async function getMessages() {
-  const { rows } = await db.query('SELECT text from messages');
+  const { rows } = await db.query('SELECT message from messages');
   return rows;
 }
 
@@ -12,7 +12,7 @@ async function getChatsOfUser(userId) {
        COUNT(m.receiver_read) FILTER (where m.receiver_read = false and m.sender_id != $1)                                 AS unread,
        json_agg(json_build_object('message_id', m.message_id, 'username', sender.username, 'sender_id', sender.user_id,
                                   'send_date', send_date, 'receiver_read', receiver_read,  'type',type, 'message',
-                                  m.text))                                                           AS messages
+                                  m.message))                                                           AS messages
 
 FROM friendships f
          JOIN chat_friendships cf on f.friendship_id = cf.friendship_id
@@ -50,7 +50,7 @@ GROUP BY c.chat_id,user_friend.username, user_friend.user_id `,
 
 async function postMessage(body) {
   const { rows } = await db.query(
-    'INSERT INTO messages (message_id,text, send_date, sender_id, chat_id, type, receiver_read) VALUES ($1, $2, $3, $4,$5, $6, $7);',
+    'INSERT INTO messages (message_id,message, send_date, sender_id, chat_id, type, receiver_read) VALUES ($1, $2, $3, $4,$5, $6, $7) returning *; ',
     [
       body.message_id,
       body.message,
@@ -156,6 +156,23 @@ from friendships
   );
   return rows;
 }
+
+async function readMessage(chat_id, message_id) {
+  const { rows } = await db.query(
+    'UPDATE messages set receiver_read = true where chat_id = $1 AND message_id = $2',
+    [chat_id, message_id],
+  );
+  return rows;
+}
+
+async function readAllMessages(chat_id) {
+  const { rows } = await db.query(
+    'UPDATE messages set receiver_read = true where chat_id = $1',
+    [chat_id],
+  );
+  return rows;
+}
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -170,4 +187,6 @@ module.exports = {
   getMessages,
   addChatFriendship,
   addChat,
+  readMessage,
+  readAllMessages,
 };

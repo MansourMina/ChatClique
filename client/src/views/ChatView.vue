@@ -4,21 +4,30 @@
       fluid
       style="overflow-y: scroll; height: 100%"
       class="pb-0"
-      ref="container"
+      
       v-if="currentChat.messages.length > 0"
     >
-      <v-timeline color="green" class="mb-0 pb-0">
-        <v-timeline-item
-          v-for="message in currentChat.messages"
-          :key="message.message_id"
-          color="red lighten-2"
-          hide-dot
-          :left="message.sender_id != user.user_id"
-          :right="message.sender_id == user.user_id"
+      <v-container
+        class="pb-3 px-0"
+        v-for="(message, index) in currentChat.messages"
+        :key="message.message_id"
+        ref="chat"
+      >
+        <v-container class="text-center pt-0" v-if="index == 0">
+          <v-card
+            style="text-align: center; display: inline-block"
+            class="mt-3 mb-0 pa-0 elevation-0 rounded-pill"
+            width="200"
+            color="blue-grey lighten-5 "
+            ><v-card-text class="pa-0">{{
+              getMessageDate(message.send_date)
+            }}</v-card-text></v-card
+          >
+        </v-container>
+        <div
           :style="`text-align: ${
             message.sender_id == user.user_id ? 'right' : 'left'
           } `"
-          ref="chat"
         >
           <v-card
             class="elevation-3 d-inline-block"
@@ -34,7 +43,7 @@
             </v-card-text>
             <v-img
               v-if="message.type == 'image'"
-              max-width="350"
+              max-width="250"
               :src="message.message"
               @click="$emit('openImage', message.message)"
               style="cursor: pointer"
@@ -57,8 +66,29 @@
               </span>
             </div>
           </v-card>
-        </v-timeline-item>
-      </v-timeline>
+        </div>
+        <v-container
+          class="text-center"
+          v-if="
+            index == -1 ||
+            (currentChat.messages[index + 1] &&
+              isDifferentDay(
+                currentChat.messages[index].send_date,
+                currentChat.messages[index + 1].send_date,
+              ))
+          "
+        >
+          <v-card
+            style="text-align: center; display: inline-block"
+            class="mt-3 mb-0 pa-0 elevation-0 rounded-pill"
+            width="200"
+            color="blue-grey lighten-5 "
+            ><v-card-text class="pa-0">{{
+              getMessageDate(currentChat.messages[index + 1].send_date)
+            }}</v-card-text></v-card
+          >
+        </v-container>
+      </v-container>
     </v-container>
     <v-footer padless color="#f0f2f5" inset app>
       <v-btn color="black" dark icon @click="handleFileImport">
@@ -117,6 +147,9 @@ export default {
     currentChat: {
       type: Object,
     },
+    getMessageDate: {
+      type: Function,
+    },
   },
   components: {},
 
@@ -132,7 +165,6 @@ export default {
       messageToSend: 'text',
     };
   },
-
   methods: {
     getUser() {
       let user = JSON.parse(localStorage.getItem('user'));
@@ -176,6 +208,23 @@ export default {
           : convTime.getMinutes()
       }`;
       return timeOfMessage;
+    },
+    getTime(messageDate) {
+      let date = new Date(messageDate);
+      return date.toDateString().slice(0, date.toDateString().length - 5);
+    },
+
+    isDifferentDay(messageD1, messageD2) {
+      const d1 = new Date(messageD1);
+      const d2 = new Date(messageD2);
+
+      let sameYearMonth =
+        d1.getYear() === d2.getYear() || d1.getMonth() === d2.getMonth();
+      if (sameYearMonth) {
+        if (d1.getDay() == d2.getDay()) return false;
+        else true;
+      }
+      return true;
     },
 
     handleFileImport() {

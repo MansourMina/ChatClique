@@ -12,9 +12,9 @@ function wsServer(httpServer) {
       if (data.type == 'message') {
         sendMessage(data.payload);
       }
-      // if (data.type == 'unread count up') {
-      //   unreadCountUp(data.payload);
-      // }
+      if (data.type == 'read') {
+        read(ws, data.payload);
+      }
     });
 
     ws.on('close', () => {
@@ -34,7 +34,13 @@ function wsServer(httpServer) {
 }
 
 function sendMessage(payload) {
-  console.log(payload)
+  axios
+    .post('http://localhost:3000/messages', payload.message)
+    .then((data) => {
+      payload.message = data.data;
+    })
+
+    .catch(function () {});
   connections.forEach((el) => {
     if (
       el.connection.user.user_id == payload.receiver.user_id ||
@@ -52,18 +58,23 @@ function sendMessage(payload) {
       );
     }
   });
+}
+
+function read(ws, payload) {
+  ws.send(
+    JSON.stringify({
+      type: 'readMessage',
+      payload: payload,
+    }),
+  );
   axios
-    .post('http://localhost:3000/messages', payload.message)
+    .patch(
+      'http://localhost:3000/messages/' + payload.chat_id,
+      payload.message.message_id,
+    )
     .then()
     .catch(function () {});
 }
-
-// function unreadCountUp(payload) {
-//   axios
-//     .patch('http://localhost:3000/messages/' + payload.message.chat_id, payload.message)
-//     .then()
-//     .catch(function () {});
-// }
 
 async function registerConnection(ws, user) {
   // send status to client

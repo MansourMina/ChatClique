@@ -98,12 +98,12 @@
                   (chat) => chat.messages.length > 0,
                 )"
                 :class="`pl-4 pr-3 ${
-                  friendChat.chat_id == chat.chat_id && show == 'chat'
+                  currentUserChat.chat_id == chat.chat_id && show == 'chat'
                     ? 'blue-grey lighten-5'
                     : ''
                 }`"
                 :key="chat.user_id"
-                @click="setFriendChat(chat), (show = 'chat')"
+                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat')"
               >
                 <v-list-item-avatar class="mt-6">
                   <v-img
@@ -117,11 +117,7 @@
                     style="cursor: pointer"
                   ></v-img>
 
-                  <v-img
-                    v-else
-                    src="@/assets/placeholder.jpg"
-                    style="cursor: pointer"
-                  ></v-img>
+                  <v-img v-else src="@/assets/placeholder.jpg"></v-img>
                 </v-list-item-avatar>
 
                 <v-list-item-content>
@@ -167,6 +163,7 @@
                       {{
                         getMessageDate(
                           chat.messages[chat.messages.length - 1].send_date,
+                          'chat',
                         )
                       }}</v-list-item-action-text
                     >
@@ -204,12 +201,12 @@
                   (chat) => chat.messages.length == 0,
                 )"
                 :class="`pl-4 pr-3 ${
-                  friendChat.chat_id == chat.chat_id && show == 'chat'
+                  currentUserChat.chat_id == chat.chat_id && show == 'chat'
                     ? 'blue-grey lighten-5'
                     : ''
                 }`"
                 :key="chat.user_id"
-                @click="setFriendChat(chat), (show = 'chat')"
+                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat')"
               >
                 <v-list-item-avatar class="mt-6">
                   <v-img
@@ -250,7 +247,7 @@
         <div v-if="show == 'requests'">
           <v-main> <friendsList :user="user" /></v-main>
         </div>
-        <div v-if="show == 'chat' && friendChat.friend">
+        <div v-if="show == 'chat' && currentUserChat.friend">
           <v-app-bar
             color="#00a884"
             class="pa-3"
@@ -265,26 +262,22 @@
               <v-list-item-avatar>
                 <v-img
                   v-if="
-                    friendChat.friend[0].image != null &&
-                    friendChat.friend[0].image &&
-                    friendChat.friend[0].image.length > 0
+                    currentUserChat.friend[0].image != null &&
+                    currentUserChat.friend[0].image &&
+                    currentUserChat.friend[0].image.length > 0
                   "
-                  :src="friendChat.friend[0].image"
-                  @click="openImage(chat.friend[0].image)"
+                  :src="currentUserChat.friend[0].image"
+                  @click="openImage(currentUserChat.friend[0].image)"
                   style="cursor: pointer"
                 ></v-img>
 
-                <v-img
-                  v-else
-                  src="@/assets/placeholder.jpg"
-                  style="cursor: pointer"
-                ></v-img>
+                <v-img v-else src="@/assets/placeholder.jpg"></v-img>
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title class="text-h6 white--text">
                   {{
-                    Object.keys(friendChat).length > 0
-                      ? friendChat.friend[0].username
+                    Object.keys(currentUserChat).length > 0
+                      ? currentUserChat.friend[0].username
                       : ''
                   }}
                 </v-list-item-title>
@@ -307,10 +300,12 @@
               @sendMessage="sendMessage"
               :currentChat="currentChat"
               @openImage="openImage"
+              :getMessageDate="getMessageDate"
+              ref="container"
             />
           </v-main>
         </div>
-        <div v-if="!friendChat.friend">
+        <div v-if="!currentUserChat.friend">
           <v-main><Home /></v-main>
         </div>
       </v-card>
@@ -350,7 +345,7 @@ export default {
   data: () => ({
     ws: null,
     search: '',
-    friendChat: {},
+    currentUserChat: {},
     user: {},
     addFriendDialog: false,
     messages: [],
@@ -358,17 +353,17 @@ export default {
     show: '',
     image: false,
     imageToOpen: null,
+    server: process.env.VUE_APP_SERVER,
+    protocol: process.env.VUE_APP_WS_PROTOCOL,
   }),
   async created() {
     this.getUser();
     if (this.user.user_id != null) {
-      const server = process.env.VUE_APP_SERVER;
-      const protocol = process.env.VUE_APP_WS_PROTOCOL;
-      this.createWSConnection(protocol, server);
+      this.createWSConnection();
       this.WebSocketMessages();
-      let friendChat = JSON.parse(localStorage.getItem('friendChat'));
-      if (friendChat) {
-        this.friendChat = friendChat;
+      let currentUserChat = JSON.parse(localStorage.getItem('currentUserChat'));
+      if (currentUserChat) {
+        this.setCurrentUserChat(currentUserChat, 'fromStorage');
         this.show = 'chat';
       }
       await this.getUsers();
@@ -382,7 +377,7 @@ export default {
     },
     currentChat() {
       return this.messages.filter(
-        (el) => el.chat_id == this.friendChat.chat_id,
+        (el) => el.chat_id == this.currentUserChat.chat_id,
       )[0];
     },
   },
@@ -402,10 +397,10 @@ export default {
             el.sender_id != this.user.user_id && el.receiver_read == false,
         ).length;
     },
-    unreadCountUp(data) {
+    read(data) {
       this.ws.send(
         JSON.stringify({
-          type: 'unread count up',
+          type: 'read',
           payload: data,
         }),
       );
@@ -420,27 +415,42 @@ export default {
           case 'disconnected':
             break;
           case 'text':
-            // message.sender_id == user.user_id
-            // if (
-            //   userdata.payload.message.chat_id != this.friendChat.chat_id &&
-            //   userdata.payload.message.sender_id != this.user.user_id
-            // ) {
-            //   this.unreadCountUp(userdata.payload.message);
-            // }
+            if (
+              userdata.payload.message.chat_id ==
+                this.currentUserChat.chat_id &&
+              userdata.payload.message.sender_id != this.user.user_id
+            ) {
+              this.read(userdata.payload.message);
+              userdata.payload.message.receiver_read = true;
+            } else userdata.payload.message.receiver_read = false;
+
             this.messages
-              .filter((el) => el.chat_id == this.friendChat.chat_id)[0]
+              .filter((el) => el.chat_id == userdata.payload.message.chat_id)[0]
               .messages.push(userdata.payload.message);
             this.scrollToEnd();
             break;
 
           case 'loadMessages':
             this.messages = userdata.payload;
+            break;
+          case 'readMessage':
+            // eslint-disable-next-line no-case-declarations
+            console.log('geht rein');
+            this.messages
+              .filter((chats) => chats.chat_id == userdata.payload.chat_id)[0]
+              .messages.find(
+                (chat) => chat.message_id == userdata.payload.message_id,
+              ).receiver_read = true;
+
+            break;
         }
       };
     },
-    createWSConnection(protocol, server) {
+    createWSConnection() {
       this.ws = new WebSocket(
-        server ? `${protocol}://${server}` : `${protocol}://${location.host}`,
+        this.server
+          ? `${this.protocol}://${this.server}`
+          : `${this.protocol}://${location.host}`,
       );
       this.ws.onopen = () => {
         this.ws.send(
@@ -478,7 +488,7 @@ export default {
         },
       });
     },
-    getMessageDate(time) {
+    getMessageDate(time, type) {
       let today = new Date();
       let yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -487,15 +497,17 @@ export default {
 
       if (messageTime.getFullYear() === today.getFullYear()) {
         if (messageTime.getDay() === today.getDay()) {
-          return `${
-            messageTime.getHours() <= 9
-              ? '0' + messageTime.getHours()
-              : messageTime.getHours()
-          }:${
-            messageTime.getMinutes() <= 9
-              ? '0' + messageTime.getMinutes()
-              : messageTime.getMinutes()
-          }`;
+          return type == 'chat'
+            ? `${
+                messageTime.getHours() <= 9
+                  ? '0' + messageTime.getHours()
+                  : messageTime.getHours()
+              }:${
+                messageTime.getMinutes() <= 9
+                  ? '0' + messageTime.getMinutes()
+                  : messageTime.getMinutes()
+              }`
+            : 'Today';
         } else if (messageTime.getDay() === yesterday.getDay()) {
           return 'Yesterday';
         } else {
@@ -511,10 +523,31 @@ export default {
       const lastMessage = chat.messages[chat.messages.length - 1];
       return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
     },
-    setFriendChat(chat) {
-      localStorage.setItem('friendChat', JSON.stringify(chat));
-      this.friendChat = chat;
-      window.scrollTo(0, 0);
+    async setCurrentUserChat(chat, type) {
+      if (type == 'toStorage')
+        localStorage.setItem('currentUserChat', JSON.stringify(chat));
+      this.currentUserChat = chat;
+
+      let unreadMessages = this.messages
+        .filter((chats) => chats.chat_id == chat.chat_id)[0]
+        .messages.filter(
+          (chat) =>
+            chat.receiver_read == false && chat.sender_id != this.user.user_id,
+        );
+      if (unreadMessages.length > 0) {
+        unreadMessages.forEach((message) => (message.receiver_read = true));
+        // this.ws.send(
+        //   JSON.stringify({
+        //     type: 'read',
+        //     payload: unreadMessages,
+        //   }),
+        // );
+        await axios({
+          url: 'http://localhost:3000/messages/' + chat.chat_id,
+          method: 'PATCH',
+        });
+      }
+      // window.scrollTo(0, 0);
     },
     getUser() {
       let user = JSON.parse(localStorage.getItem('user'));

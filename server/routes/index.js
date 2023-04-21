@@ -12,6 +12,8 @@ const {
   getRequests,
   addFriendship,
   getFriends,
+  readMessage,
+  readAllMessages,
 } = require('../controllers/messages');
 
 router.get('/users', getUsers);
@@ -25,5 +27,7 @@ router.post('/login', login);
 router.post('/register', register);
 router.post('/request', postRequest);
 router.post('/friendship', addFriendship);
+
+router.patch('/messages/:chatId', readMessage);
 
 module.exports = router;

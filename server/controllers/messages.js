@@ -106,6 +106,19 @@ async function generateUserId() {
   return id;
 }
 
+const readMessage = asyncHandler(async (req, res) => {
+  if (req.body.message_id) {
+    const read = await messagesModel.readMessage(
+      req.params.chatId,
+      req.body.message_id,
+    );
+    res.status(200).json(read);
+  } else {
+    const readAll = await messagesModel.readAllMessages(req.params.chatId);
+    res.status(200).json(readAll);
+  }
+});
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -118,4 +131,5 @@ module.exports = {
   getRequests,
   addFriendship,
   getFriends,
+  readMessage,
 };
