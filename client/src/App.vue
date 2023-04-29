@@ -11,11 +11,18 @@
             @addFriend="addFriend"
           />
 
-          <Profile v-if="nav == 'profile'" @close="nav = 'chat'" :user="user" />
+          <Profile
+            v-if="nav == 'profile'"
+            @close="nav = 'chat'"
+            :user="user"
+            @updateProfile="updateProfile"
+          />
           <friendsList
             v-if="nav == 'friends'"
             @close="nav = 'chat'"
             :user="user"
+            :requests="requests"
+            :onlineFriends="connectedFriends"
           />
           <div v-if="nav == 'chat'">
             <v-app-bar
@@ -80,19 +87,27 @@
               </div>
             </v-app-bar>
 
-            <v-list color="transparent" class="pa-0 ma-0">
+            <v-list color="transparent" class="pa-0 ma-0 d-flex">
               <v-list-item
                 link
+                width="200"
                 @click="nav = 'friends'"
                 :class="`pl-2 ${
                   show == 'requests' ? 'blue-grey lighten-5' : ''
                 }`"
               >
                 <v-list-item-avatar size="50">
-                  <v-btn icon aria-label="Friends">
+                  <v-badge
+                    color="red"
+                    :value="requests.length"
+                    :content="requests.length"
+                    bordered
+                    overlap
+                  >
                     <v-icon>mdi-account-supervisor</v-icon>
-                  </v-btn>
+                  </v-badge>
                 </v-list-item-avatar>
+
                 <v-list-item-content>
                   <v-list-item-title> Friends </v-list-item-title>
                 </v-list-item-content>
@@ -132,16 +147,18 @@
             >
               <v-list-item
                 link
-                v-for="chat in searchChats.filter(
-                  (chat) => chat.messages.length > 0,
-                )"
+                v-for="chat in chatsWithMessages"
                 :class="`pl-4 pr-3 ${
                   currentUserChat.chat_id == chat.chat_id && show == 'chat'
                     ? 'blue-grey lighten-5'
                     : ''
                 }`"
                 :key="chat.user_id"
-                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat'), showFullNav = false"
+                @click="
+                  setCurrentUserChat(chat, 'toStorage'),
+                    (show = 'chat'),
+                    (showFullNav = false)
+                "
               >
                 <v-list-item-avatar class="mt-6" size="50">
                   <v-img
@@ -249,7 +266,11 @@
                     : ''
                 }`"
                 :key="chat.user_id"
-                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat'),showFullNav = false"
+                @click="
+                  setCurrentUserChat(chat, 'toStorage'),
+                    (show = 'chat'),
+                    (showFullNav = false)
+                "
               >
                 <v-list-item-avatar class="mt-6" size="50">
                   <v-img
@@ -282,8 +303,6 @@
           </div>
         </v-navigation-drawer>
         <div v-if="show == 'chat' && currentUserChat.friend">
-          {{ showFullNav }}
-
           <v-app-bar
             color="#00a884"
             class="pa-3"
@@ -419,6 +438,7 @@ export default {
     protocol: process.env.VUE_APP_WS_PROTOCOL,
     showChat: false,
     showFullNav: false,
+    requests: [],
   }),
   async created() {
     this.getUser();
@@ -431,9 +451,25 @@ export default {
         this.show = 'chat';
       }
       await this.getUsers();
+      await this.getRequests();
     }
   },
   computed: {
+    chatsWithMessages() {
+      // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+      return this.searchChats
+        .filter((chat) => chat.messages.length > 0)
+        .sort((a, b) => {
+          const lastMessageA = a.messages[a.messages.length - 1];
+          const lastMessageB = b.messages[b.messages.length - 1];
+          if (lastMessageA && lastMessageB) {
+            return (
+              new Date(lastMessageB.send_date) -
+              new Date(lastMessageA.send_date)
+            );
+          }
+        });
+    },
     searchChats() {
       return this.messages.filter((el) =>
         el.friend[0].username.includes(this.search),
@@ -462,6 +498,18 @@ export default {
     },
   },
   methods: {
+    async updateProfile(body) {
+      const { data } = await axios({
+        url: 'http://localhost:3000/user/' + this.user.user_id,
+        method: 'PATCH',
+        data: {
+          image: body.image,
+          name: body.name,
+        },
+      });
+      localStorage.setItem('user', JSON.stringify(data));
+      this.getUser();
+    },
     getStatusOfFriend(friend) {
       if (this.connectedFriends.find((user) => user.user_id == friend.user_id))
         return true;
@@ -575,6 +623,12 @@ export default {
           status: 'requested',
         },
       });
+    },
+    async getRequests() {
+      const { data } = await axios({
+        url: 'http://localhost:3000/requests/' + this.user.user_id,
+      });
+      this.requests = data;
     },
     getMessageDate(time, type) {
       let today = new Date();

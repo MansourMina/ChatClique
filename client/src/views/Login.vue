@@ -313,8 +313,7 @@ export default {
             password: this.password,
           },
         });
-
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('user', JSON.stringify(data));
         const user = localStorage.getItem('user');
         if (user != null) {
           this.$router.push(`/`);

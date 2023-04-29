@@ -14,7 +14,14 @@
         </v-list-item>
       </v-list>
       <v-spacer></v-spacer>
-      <v-btn text class="white--text mt-4" :disabled="!imageFile"> Save </v-btn>
+      <v-btn
+        text
+        class="white--text mt-4"
+        :disabled="!imageFile && this.user.name == name"
+        @click="updateProfile()"
+      >
+        Save
+      </v-btn>
     </v-app-bar>
 
     <v-container class="mt-5" fluid>
@@ -143,6 +150,12 @@ export default {
         reader.onload = () => resolve(reader.result);
         reader.onerror = (error) => reject(error);
         return Promise.resolve(reader.result);
+      });
+    },
+    updateProfile() {
+      this.$emit('updateProfile', {
+        image: this.imageFile,
+        name: this.name,
       });
     },
   },

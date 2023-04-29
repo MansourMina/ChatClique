@@ -1,6 +1,6 @@
 GET  http://127.0.0.1:3000/messages
 ###
-GET  http://127.0.0.1:3000/chats/4593822
+GET  http://127.0.0.1:3000/chats/4822
 ###
 GET  http://127.0.0.1:3000/users
 ###

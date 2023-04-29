@@ -14,10 +14,11 @@ const {
   getFriends,
   readMessage,
   readAllMessages,
+  updateProfile,
 } = require('../controllers/messages');
 
 router.get('/users', getUsers);
-router.post('/friends', getFriends);
+router.get('/friends/:userId', getFriends);
 router.get('/requests/:userId', getRequests);
 router.get('/chats/:userId', getChatsOfUser);
 router.get('/logout', logout);
@@ -29,5 +30,6 @@ router.post('/request', postRequest);
 router.post('/friendship', addFriendship);
 
 router.patch('/messages/:chatId', readMessage);
+router.patch('/user/:userId', updateProfile);
 
 module.exports = router;

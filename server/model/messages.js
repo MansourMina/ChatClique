@@ -149,9 +149,12 @@ from friendship_requests
 
 async function getFriends(user_id) {
   const { rows } = await db.query(
-    `SELECT 
-from friendships
-         JOIN users ON from_user_id = user_id where user1_id = $1 or user2_id = $1`,
+    `SELECT f.friendship_id, u.user_id, u.username, u.email, u.name, u.image, f.since
+from friendships f
+         JOIN users u
+              on u.user_id = (SELECT Case when f.user1_id = $1 then f.user2_id else f.user1_id end LIMIT 1)
+where user1_id = $1
+   or user2_id = $1`,
     [user_id],
   );
   return rows;
@@ -173,6 +176,20 @@ async function readAllMessages(chat_id) {
   return rows;
 }
 
+async function updateProfile(user_id, body) {
+  let newProfile = [];
+  for (const key in body) {
+    newProfile.push(`${key}= '${body[key]}'`);
+  }
+  const { rows } = await db.query(
+    `UPDATE users set ${newProfile.join(
+      ',',
+    )} where user_id = $1 returning username, name, user_id, email, image`,
+    [user_id],
+  );
+  return rows[0];
+}
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -189,4 +206,5 @@ module.exports = {
   addChat,
   readMessage,
   readAllMessages,
+  updateProfile,
 };
