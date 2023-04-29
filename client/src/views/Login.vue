@@ -260,6 +260,11 @@ import axios from 'axios';
 import zxcvbn from 'zxcvbn';
 
 export default {
+  props: {
+    getBase: {
+      type: Function,
+    },
+  },
   data() {
     return {
       showTooltip: false,

@@ -2,8 +2,22 @@
   <v-app>
     <div v-if="user.user_id">
       <v-card tile id="application">
-        <v-navigation-drawer width="500" statless app>
-          <div v-if="!addFriendDialog">
+        <v-navigation-drawer :width="mini" statless app permanent>
+          <addFriend
+            v-if="nav == 'addFriend'"
+            @close="nav = 'chat'"
+            :users="users"
+            :ownUser="user"
+            @addFriend="addFriend"
+          />
+
+          <Profile v-if="nav == 'profile'" @close="nav = 'chat'" :user="user" />
+          <friendsList
+            v-if="nav == 'friends'"
+            @close="nav = 'chat'"
+            :user="user"
+          />
+          <div v-if="nav == 'chat'">
             <v-app-bar
               color="#00a884"
               height="100"
@@ -14,8 +28,16 @@
               <v-list color="transparent" class="pa-3 ml-0 pl-0">
                 <v-list-item class="mt-4 pl-1">
                   <v-list-item-avatar size="50">
-                    <v-img v-if="user.image" :src="user.image"></v-img>
-                    <v-img v-else src="@/assets/placeholder.jpg"></v-img>
+                    <v-img
+                      width="50"
+                      v-if="user.image"
+                      :src="user.image"
+                    ></v-img>
+                    <v-img
+                      v-else
+                      src="@/assets/placeholder.jpg"
+                      width="50"
+                    ></v-img>
                   </v-list-item-avatar>
                   <v-list-item-content>
                     <v-list-item-title class="text-h6 white--text">
@@ -34,14 +56,24 @@
               <div class="mt-6">
                 <v-menu bottom left offset-y>
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn dark icon v-bind="attrs" v-on="on">
+                    <v-btn
+                      dark
+                      icon
+                      v-bind="attrs"
+                      v-on="on"
+                      aria-label="User Menu"
+                    >
                       <v-icon>mdi-dots-vertical</v-icon>
                     </v-btn>
                   </template>
 
-                  <v-list>
+                  <v-list width="150" class="pt-0 pb-0">
+                    <v-list-item link @click="nav = 'profile'">
+                      <v-list-item-title>Profile</v-list-item-title>
+                    </v-list-item>
+                    <v-divider></v-divider>
                     <v-list-item link @click="logout()">
-                      <v-list-item-title>Abmelden</v-list-item-title>
+                      <v-list-item-title>Log out</v-list-item-title>
                     </v-list-item>
                   </v-list>
                 </v-menu>
@@ -51,13 +83,13 @@
             <v-list color="transparent" class="pa-0 ma-0">
               <v-list-item
                 link
-                @click="show = 'requests'"
+                @click="nav = 'friends'"
                 :class="`pl-2 ${
                   show == 'requests' ? 'blue-grey lighten-5' : ''
                 }`"
               >
                 <v-list-item-avatar size="50">
-                  <v-btn icon>
+                  <v-btn icon aria-label="Friends">
                     <v-icon>mdi-account-supervisor</v-icon>
                   </v-btn>
                 </v-list-item-avatar>
@@ -74,10 +106,16 @@
               v-model="search"
             >
               <template v-slot:prepend>
-                <v-icon class="ml-2 mr-3">mdi-magnify</v-icon>
+                <v-icon class="ml-2 mr-3" aria-label="Search"
+                  >mdi-magnify</v-icon
+                >
               </template>
               <template v-slot:append-outer>
-                <v-btn icon class="ml-2 mr-3" @click="addFriendDialog = true"
+                <v-btn
+                  icon
+                  class="ml-2 mr-3"
+                  @click="nav = 'addFriend'"
+                  aria-label="Add Friends"
                   ><v-icon>mdi-account-multiple-plus-outline</v-icon></v-btn
                 >
               </template>
@@ -103,10 +141,11 @@
                     : ''
                 }`"
                 :key="chat.user_id"
-                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat')"
+                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat'), showFullNav = false"
               >
-                <v-list-item-avatar class="mt-6">
+                <v-list-item-avatar class="mt-6" size="50">
                   <v-img
+                    width="50"
                     v-if="
                       chat.friend[0].image != null &&
                       chat.friend[0].image &&
@@ -117,7 +156,11 @@
                     style="cursor: pointer"
                   ></v-img>
 
-                  <v-img v-else src="@/assets/placeholder.jpg"></v-img>
+                  <v-img
+                    v-else
+                    src="@/assets/placeholder.jpg"
+                    width="50"
+                  ></v-img>
                 </v-list-item-avatar>
 
                 <v-list-item-content>
@@ -206,10 +249,11 @@
                     : ''
                 }`"
                 :key="chat.user_id"
-                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat')"
+                @click="setCurrentUserChat(chat, 'toStorage'), (show = 'chat'),showFullNav = false"
               >
-                <v-list-item-avatar class="mt-6">
+                <v-list-item-avatar class="mt-6" size="50">
                   <v-img
+                    width="50"
                     v-if="
                       chat.friend[0].image != null &&
                       chat.friend[0].image &&
@@ -221,6 +265,7 @@
                   ></v-img>
 
                   <v-img
+                    width="50"
                     v-else
                     src="@/assets/placeholder.jpg"
                     style="cursor: pointer"
@@ -235,19 +280,10 @@
               </v-list-item>
             </v-list>
           </div>
-          <addFriend
-            v-else
-            @close="addFriendDialog = false"
-            :users="users"
-            :ownUser="user"
-            @addFriend="addFriend"
-          />
         </v-navigation-drawer>
-
-        <div v-if="show == 'requests'">
-          <v-main> <friendsList :user="user" /></v-main>
-        </div>
         <div v-if="show == 'chat' && currentUserChat.friend">
+          {{ showFullNav }}
+
           <v-app-bar
             color="#00a884"
             class="pa-3"
@@ -256,11 +292,18 @@
             app
             rounded="0"
           >
-            <v-app-bar-nav-icon color="white"></v-app-bar-nav-icon>
+            <v-app-bar-nav-icon
+              color="white"
+              class="hidden-md-and-up"
+              @click="showFullNav = true"
+            >
+              <v-icon>mdi-arrow-left</v-icon>
+            </v-app-bar-nav-icon>
 
             <v-list-item>
-              <v-list-item-avatar>
+              <v-list-item-avatar size="50">
                 <v-img
+                  width="50"
                   v-if="
                     currentUserChat.friend[0].image != null &&
                     currentUserChat.friend[0].image &&
@@ -271,7 +314,7 @@
                   style="cursor: pointer"
                 ></v-img>
 
-                <v-img v-else src="@/assets/placeholder.jpg"></v-img>
+                <v-img width="50" v-else src="@/assets/placeholder.jpg"></v-img>
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title class="text-h6 white--text">
@@ -281,18 +324,33 @@
                       : ''
                   }}
                 </v-list-item-title>
+                <v-list-item-subtitle class="white--text">
+                  <v-icon
+                    :color="
+                      getStatusOfFriend(currentUserChat.friend[0])
+                        ? 'green accent-4'
+                        : 'red'
+                    "
+                    >mdi-circle-medium</v-icon
+                  >
+                  {{
+                    getStatusOfFriend(currentUserChat.friend[0])
+                      ? 'online'
+                      : 'offline'
+                  }}
+                </v-list-item-subtitle>
               </v-list-item-content>
             </v-list-item>
 
             <v-spacer></v-spacer>
 
-            <v-btn icon color="white">
+            <!-- <v-btn icon color="white">
               <v-icon>mdi-magnify</v-icon>
             </v-btn>
 
             <v-btn icon color="white">
               <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
+            </v-btn> -->
           </v-app-bar>
 
           <v-main hide-overlay style="height: 100vh">
@@ -301,10 +359,10 @@
               :currentChat="currentChat"
               @openImage="openImage"
               :getMessageDate="getMessageDate"
-              ref="container"
             />
           </v-main>
         </div>
+
         <div v-if="!currentUserChat.friend">
           <v-main><Home /></v-main>
         </div>
@@ -328,6 +386,7 @@
 <script>
 import Login from '@/views/Login.vue';
 import Home from '@/views/Home.vue';
+import Profile from '@/components/Profile.vue';
 import addFriend from '@/components/addFriend.vue';
 import friendsList from '@/components/friendsList.vue';
 import openImage from '@/components/openImage.vue';
@@ -341,6 +400,7 @@ export default {
     addFriend,
     friendsList,
     openImage,
+    Profile,
   },
   data: () => ({
     ws: null,
@@ -350,11 +410,15 @@ export default {
     addFriendDialog: false,
     messages: [],
     users: [],
+    connectedFriends: [],
     show: '',
+    nav: 'chat',
     image: false,
     imageToOpen: null,
     server: process.env.VUE_APP_SERVER,
     protocol: process.env.VUE_APP_WS_PROTOCOL,
+    showChat: false,
+    showFullNav: false,
   }),
   async created() {
     this.getUser();
@@ -380,8 +444,29 @@ export default {
         (el) => el.chat_id == this.currentUserChat.chat_id,
       )[0];
     },
+    mini() {
+      switch (this.$vuetify.breakpoint.name) {
+        case 'xs':
+          return this.showFullNav ? '100vw' : '0';
+        case 'sm':
+          return this.showFullNav ? '100vw' : '0';
+        case 'md':
+          return '500';
+        case 'lg':
+          return '500';
+        case 'xl':
+          return '500';
+        default:
+          return false;
+      }
+    },
   },
   methods: {
+    getStatusOfFriend(friend) {
+      if (this.connectedFriends.find((user) => user.user_id == friend.user_id))
+        return true;
+      else return false;
+    },
     openImage(img) {
       this.image = true;
       this.imageToOpen = img;
@@ -411,8 +496,12 @@ export default {
 
         switch (userdata.type) {
           case 'connected':
+            this.connectedFriends = userdata.payload;
             break;
           case 'disconnected':
+            this.connectedFriends = this.connectedFriends.filter(
+              (user) => user.user_id != userdata.payload.user_id,
+            );
             break;
           case 'text':
             if (
@@ -435,7 +524,6 @@ export default {
             break;
           case 'readMessage':
             // eslint-disable-next-line no-case-declarations
-            console.log('geht rein');
             this.messages
               .filter((chats) => chats.chat_id == userdata.payload.chat_id)[0]
               .messages.find(
@@ -527,26 +615,29 @@ export default {
       if (type == 'toStorage')
         localStorage.setItem('currentUserChat', JSON.stringify(chat));
       this.currentUserChat = chat;
-
-      let unreadMessages = this.messages
-        .filter((chats) => chats.chat_id == chat.chat_id)[0]
-        .messages.filter(
-          (chat) =>
-            chat.receiver_read == false && chat.sender_id != this.user.user_id,
-        );
-      if (unreadMessages.length > 0) {
-        unreadMessages.forEach((message) => (message.receiver_read = true));
-        // this.ws.send(
-        //   JSON.stringify({
-        //     type: 'read',
-        //     payload: unreadMessages,
-        //   }),
-        // );
-        await axios({
-          url: 'http://localhost:3000/messages/' + chat.chat_id,
-          method: 'PATCH',
-        });
+      if (this.messages.length > 0) {
+        let unreadMessages = this.messages
+          .filter((chats) => chats.chat_id == chat.chat_id)[0]
+          .messages.filter(
+            (chat) =>
+              chat.receiver_read == false &&
+              chat.sender_id != this.user.user_id,
+          );
+        if (unreadMessages.length > 0) {
+          unreadMessages.forEach((message) => (message.receiver_read = true));
+          // this.ws.send(
+          //   JSON.stringify({
+          //     type: 'read',
+          //     payload: unreadMessages,
+          //   }),
+          // );
+          await axios({
+            url: 'http://localhost:3000/messages/' + chat.chat_id,
+            method: 'PATCH',
+          });
+        }
       }
+
       // window.scrollTo(0, 0);
     },
     getUser() {
@@ -558,7 +649,7 @@ export default {
     scrollToEnd() {
       const container = this.$refs['container'];
       if (container)
-        (container.scrollTop = 0), console.log(container.scrollHeight);
+        this.$nextTick(() => (container.scrollTop = container.scrollHeight));
     },
   },
 };

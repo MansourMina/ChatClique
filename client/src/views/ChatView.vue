@@ -4,8 +4,8 @@
       fluid
       style="overflow-y: scroll; height: 100%"
       class="pb-0"
-      
-      v-if="currentChat.messages.length > 0"
+      ref="container"
+      v-if="currentChat"
     >
       <v-container
         class="pb-3 px-0"
@@ -91,7 +91,7 @@
       </v-container>
     </v-container>
     <v-footer padless color="#f0f2f5" inset app>
-      <v-btn color="black" dark icon @click="handleFileImport">
+      <v-btn color="black" dark icon @click="handleFileImport" aria-label="Choose File">
         <v-icon>mdi-paperclip</v-icon>
       </v-btn>
 
@@ -134,6 +134,7 @@
         dark
         icon
         @click="message.length > 0 ? sendMessage() : false"
+        aria-label="Send message"
       >
         <v-icon>mdi-send</v-icon>
       </v-btn>
