@@ -3,7 +3,6 @@
     <v-container
       fluid
       style="overflow-y: scroll; height: 100%"
-      class="pb-0"
       ref="container"
       v-if="currentChat"
     >
@@ -11,7 +10,6 @@
         class="pb-3 px-0"
         v-for="(message, index) in currentChat.messages"
         :key="message.message_id"
-        ref="chat"
       >
         <v-container class="text-center pt-0" v-if="index == 0">
           <v-card
@@ -91,7 +89,13 @@
       </v-container>
     </v-container>
     <v-footer padless color="#f0f2f5" inset app>
-      <v-btn color="black" dark icon @click="handleFileImport" aria-label="Choose File">
+      <v-btn
+        color="black"
+        dark
+        icon
+        @click="handleFileImport"
+        aria-label="Choose File"
+      >
         <v-icon>mdi-paperclip</v-icon>
       </v-btn>
 
@@ -142,6 +146,7 @@
   </div>
 </template>
 <script>
+import { ref } from 'vue';
 export default {
   name: 'MessageViewBody',
   props: {
@@ -153,9 +158,24 @@ export default {
     },
   },
   components: {},
+  setup() {
+    const childElementRef = ref(null);
+
+    const childMethod = () => {
+      console.log('Child Method triggered!');
+      // do something in child component
+    };
+
+    return {
+      childElementRef,
+      childMethod,
+    };
+  },
 
   created() {
     this.getUser();
+      this.scrollToEnd();
+
   },
   data() {
     return {
@@ -186,7 +206,6 @@ export default {
           receiver_read: false,
         },
       };
-      this.scrollToEnd();
       this.$emit('sendMessage', {
         type: 'message',
         art: this.messageToSend,
@@ -241,9 +260,10 @@ export default {
       });
     },
     scrollToEnd() {
-      const container = this.$refs['container'];
-      if (container)
-        this.$nextTick(() => (container.scrollTop = container.scrollHeight));
+      this.$nextTick(() => {
+        const container = this.$refs.container;
+        if (container) container.scrollTop = container.scrollHeight;
+      });
     },
     closeFileInput() {
       this.showFile = false;

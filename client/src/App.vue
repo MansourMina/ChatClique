@@ -373,11 +373,12 @@
           </v-app-bar>
 
           <v-main hide-overlay style="height: 100vh">
-            <router-view
+            <ChatView
               @sendMessage="sendMessage"
               :currentChat="currentChat"
               @openImage="openImage"
               :getMessageDate="getMessageDate"
+              ref="chat"
             />
           </v-main>
         </div>
@@ -403,12 +404,14 @@
 </template>
 
 <script>
+import { ref } from 'vue';
 import Login from '@/views/Login.vue';
 import Home from '@/views/Home.vue';
 import Profile from '@/components/Profile.vue';
 import addFriend from '@/components/addFriend.vue';
 import friendsList from '@/components/friendsList.vue';
 import openImage from '@/components/openImage.vue';
+import ChatView from '@/views/ChatView.vue';
 import axios from 'axios';
 
 export default {
@@ -420,6 +423,7 @@ export default {
     friendsList,
     openImage,
     Profile,
+    ChatView,
   },
   data: () => ({
     ws: null,
@@ -439,17 +443,31 @@ export default {
     showChat: false,
     showFullNav: false,
     requests: [],
+    chatRef: null,
   }),
+  setup() {
+    const childRef = ref(null);
+
+    const triggerChildMethod = () => {
+      childRef.value.childMethod();
+    };
+
+    return {
+      childRef,
+      triggerChildMethod,
+    };
+  },
+
   async created() {
     this.getUser();
     if (this.user.user_id != null) {
       this.createWSConnection();
       this.WebSocketMessages();
-      let currentUserChat = JSON.parse(localStorage.getItem('currentUserChat'));
-      if (currentUserChat) {
-        this.setCurrentUserChat(currentUserChat, 'fromStorage');
-        this.show = 'chat';
-      }
+      // let currentUserChat = JSON.parse(localStorage.getItem('currentUserChat'));
+      // if (currentUserChat) {
+      //   this.setCurrentUserChat(currentUserChat, 'fromStorage');
+      //   this.show = 'chat';
+      // }
       await this.getUsers();
       await this.getRequests();
     }
@@ -666,6 +684,7 @@ export default {
       return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
     },
     async setCurrentUserChat(chat, type) {
+      this.scrollToEnd();
       if (type == 'toStorage')
         localStorage.setItem('currentUserChat', JSON.stringify(chat));
       this.currentUserChat = chat;
@@ -691,8 +710,6 @@ export default {
           });
         }
       }
-
-      // window.scrollTo(0, 0);
     },
     getUser() {
       let user = JSON.parse(localStorage.getItem('user'));
@@ -701,9 +718,10 @@ export default {
       }
     },
     scrollToEnd() {
-      const container = this.$refs['container'];
-      if (container)
-        this.$nextTick(() => (container.scrollTop = container.scrollHeight));
+      this.$nextTick(() => {
+        const chat = this.$refs.chat;
+        if (chat) chat.scrollToEnd();
+      });
     },
   },
 };

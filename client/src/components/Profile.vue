@@ -56,7 +56,7 @@
               <img
                 v-if="showChange"
                 alt="Avatar"
-                :src="imageFile"
+                :src="imageFile ? imageFile : user.image"
                 name="Profile Picture"
               />
               <div
@@ -73,7 +73,7 @@
             </v-avatar>
           </div>
 
-          <v-avatar size="200" v-else class="default">
+          <v-avatar v-else size="200" class="default">
             <img
               alt="Avatar"
               src="@/assets/placeholder.jpg"
@@ -103,7 +103,7 @@
         dense
         v-model="name"
         :clearable="!readonly"
-        :append-icon="readonly ? 'mdi-pencil' : 'mdi-check'"
+        :append-icon="readonly ? 'mdi-pencil' : ''"
         @click:append="(readonly = !readonly), $refs['name'].focus()"
         hide-details
         color="green"
@@ -153,10 +153,10 @@ export default {
       });
     },
     updateProfile() {
-      this.$emit('updateProfile', {
-        image: this.imageFile,
-        name: this.name,
-      });
+      let dataToSend = {};
+      this.imageFile ? (dataToSend.image = this.imageFile) : false;
+      this.user.name != this.name ? (dataToSend.name = this.name) : false;
+      this.$emit('updateProfile', dataToSend);
     },
   },
 };
