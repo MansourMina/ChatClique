@@ -140,7 +140,7 @@
 
             <v-list
               three-line
-              class="mt-0 pt-0 mb-10"
+              class="mt-0 pt-0 mb-10 pb-10"
               style="overflow-y: scroll"
               max-height="80vh"
               v-if="messages.length > 0"
@@ -499,6 +499,12 @@ export default {
       )[0];
     },
     mini() {
+      if (
+        (!this.currentUserChat.friend &&
+          this.$vuetify.breakpoint.name == 'xs') ||
+        this.$vuetify.breakpoint.name == 'sm'
+      )
+        return '100vw';
       switch (this.$vuetify.breakpoint.name) {
         case 'xs':
           return this.showFullNav ? '100vw' : '0';
@@ -518,7 +524,7 @@ export default {
   methods: {
     async updateProfile(body) {
       const { data } = await axios({
-        url: 'http://localhost:3000/user/' + this.user.user_id,
+        url: '/user/' + this.user.user_id,
         method: 'PATCH',
         data: {
           image: body.image,
@@ -617,13 +623,14 @@ export default {
     },
     async getUsers() {
       const { data } = await axios({
-        url: 'http://localhost:3000/users',
+        url: '/users',
+        method: 'GET'
       });
       this.users = data;
     },
     async logout() {
       await axios({
-        url: 'http://localhost:3000/logout',
+        url: '/logout',
         method: 'GET',
       });
       localStorage.clear();
@@ -632,7 +639,7 @@ export default {
     },
     async addFriend(friend) {
       await axios({
-        url: 'http://localhost:3000/request',
+        url: '/request',
         method: 'POST',
         data: {
           from_user_id: this.user.user_id,
@@ -644,7 +651,7 @@ export default {
     },
     async getRequests() {
       const { data } = await axios({
-        url: 'http://localhost:3000/requests/' + this.user.user_id,
+        url: '/requests/' + this.user.user_id,
       });
       this.requests = data;
     },
@@ -684,7 +691,7 @@ export default {
       return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
     },
     async setCurrentUserChat(chat, type) {
-      this.scrollToEnd();
+      this.currentUserChat != chat ?? this.scrollToEnd();
       if (type == 'toStorage')
         localStorage.setItem('currentUserChat', JSON.stringify(chat));
       this.currentUserChat = chat;
@@ -705,7 +712,7 @@ export default {
           //   }),
           // );
           await axios({
-            url: 'http://localhost:3000/messages/' + chat.chat_id,
+            url: '/messages/' + chat.chat_id,
             method: 'PATCH',
           });
         }

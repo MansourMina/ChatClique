@@ -305,7 +305,7 @@ export default {
     async login() {
       try {
         let { data } = await axios({
-          url: 'http://localhost:3000/login',
+          url: '/login',
           method: 'POST',
           contentType: 'application/json',
           data: {
@@ -328,7 +328,7 @@ export default {
       this.loading = true;
       try {
         await axios({
-          url: 'http://localhost:3000/register',
+          url: '/register',
           method: 'POST',
           data: {
             name: this.name,

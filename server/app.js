@@ -20,6 +20,8 @@ const app = express();
 app.use(morgan('dev'));
 app.use(cors());
 app.use(helmet());
+app.use(express.static(path.join(__dirname, '/public')));
+
 const { NODE_ENV, SESSION_LIFETIME, SESSION_NAME } = process.env;
 
 app.use(express.json({ limit: '50mb' }));

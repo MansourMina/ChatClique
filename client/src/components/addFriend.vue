@@ -1,5 +1,5 @@
 <template>
-  <div style="height: 100%" >
+  <div style="height: 100%">
     <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
       <v-list color="transparent" class="pl-0 ml-0">
         <v-list-item class="mt-4 pl-0 ml-0">

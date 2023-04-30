@@ -1,5 +1,5 @@
 <template>
-  <div style="background-color: white">
+  <div style="background-color: white; height: 100%">
     <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
       <v-list color="transparent" class="pl-0 ml-0">
         <v-list-item class="mt-4 pl-0 ml-0">
@@ -14,8 +14,16 @@
         </v-list-item>
       </v-list>
     </v-app-bar>
-    <v-container>
-      <v-list subheader two-line>
+    <v-container
+      style="overflow: hidden; height: 100%"
+      class="mx-0 px-0 pt-0 pb-10"
+    >
+      <v-list
+        class="mt-0 pt-0"
+        subheader
+        two-line
+        style="overflow: scroll; height: 100%"
+      >
         <v-subheader
           >Online
           <v-icon color="green accent-4">mdi-circle-medium</v-icon></v-subheader
@@ -28,7 +36,6 @@
           </v-list-item-avatar>
 
           <v-list-item-content>
-            
             <v-list-item-title>{{ friend.name }}</v-list-item-title>
           </v-list-item-content>
 
@@ -131,7 +138,7 @@ export default {
   methods: {
     async acceptRequest(request) {
       await axios({
-        url: 'http://localhost:3000/friendship',
+        url: '/friendship',
         method: 'POST',
         data: {
           request_id: request.request_id,
@@ -143,7 +150,7 @@ export default {
     },
     async getFriends() {
       const { data } = await axios({
-        url: 'http://localhost:3000/friends/' + this.user.user_id,
+        url: '/friends/' + this.user.user_id,
         method: 'GET',
       });
       this.friends = data;
