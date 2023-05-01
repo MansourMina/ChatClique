@@ -46,6 +46,7 @@ app.use(
     },
   }),
 );
+app.set('trust proxy', 1);
 app.use('/', routes);
 app.use(notFound);
 app.use(errorHandler);
