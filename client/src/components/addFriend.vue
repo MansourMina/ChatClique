@@ -46,9 +46,29 @@
         </v-list-item-content>
         <v-list-item-action class="mt-6">
           <v-list-item-action-text>
-            <v-btn icon @click="$emit('addFriend', user)"
+            <v-btn
+              icon
+              @click="$emit('addFriend', user)"
+              v-if="statusOfSearch == 'request'"
               ><v-icon>mdi-account-plus-outline</v-icon></v-btn
             >
+            <v-icon color="green" v-if="statusOfSearch == 'friend'" class="mt-2"
+              >mdi-account-multiple-check</v-icon
+            >
+            <v-icon v-if="statusOfSearch == 'requested'" class="mt-2"
+              >mdi-account-clock</v-icon
+            >
+
+            <span v-if="statusOfSearch == 'for you'">
+              <v-btn icon>
+                <v-icon color="red darken-2">mdi-close-circle</v-icon>
+              </v-btn>
+              <v-btn icon>
+                <v-icon color="#00a884" @click="acceptRequest()"
+                  >mdi-check-circle</v-icon
+                >
+              </v-btn>
+            </span>
           </v-list-item-action-text>
         </v-list-item-action>
       </v-list-item>
@@ -57,6 +77,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   props: {
     users: {
@@ -64,6 +85,12 @@ export default {
     },
     ownUser: {
       type: Object,
+    },
+    friends: {
+      type: Array,
+    },
+    requests: {
+      type: Array,
     },
   },
   data() {
@@ -79,6 +106,54 @@ export default {
             this.searchAddNewFriend.toLowerCase() &&
           el.user_id != this.ownUser.user_id,
       );
+    },
+    statusOfSearch() {
+      if (
+        this.friends.find(
+          (friend) =>
+            `${friend.username.toLowerCase()}#${friend.user_id}` ==
+            this.searchAddNewFriend.toLowerCase(),
+        )
+      )
+        return 'friend';
+      else if (
+        this.requests.find(
+          (request) =>
+            `${request.to_username.toLowerCase()}#${request.to_user_id}` ==
+            this.searchAddNewFriend.toLowerCase(),
+        )
+      )
+        return 'requested';
+      else if (
+        this.requests.find(
+          (request) =>
+            `${request.from_username.toLowerCase()}#${request.from_user_id}` ==
+            this.searchAddNewFriend.toLowerCase(),
+        )
+      )
+        return 'for you';
+      else return 'request';
+    },
+  },
+  methods: {
+    async acceptRequest() {
+      let findRequest = this.requests.find(
+        (request) =>
+          `${request.from_username.toLowerCase()}#${request.from_user_id}` ==
+          this.searchAddNewFriend.toLowerCase(),
+      );
+      console.log(findRequest);
+      await axios({
+        url: '/friendship',
+        method: 'POST',
+        data: {
+          request_id: findRequest.request_id,
+          user1_id: findRequest.to_user_id,
+          user2_id: findRequest.from_user_id,
+          date: new Date(),
+        },
+      });
+      this.$emit('update');
     },
   },
 };

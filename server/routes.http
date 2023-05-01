@@ -4,7 +4,9 @@ GET  http://127.0.0.1:3000/chats/4822
 ###
 GET  http://127.0.0.1:3000/users
 ###
-GET  http://127.0.0.1:3000/requests/2909
+GET  http://127.0.0.1:3000/friends/4822
+###
+GET  http://127.0.0.1:3000/requests/5232
 ###
 POST  http://127.0.0.1:3000/messages
 content-Type: application/json

@@ -92,18 +92,19 @@ async function registerConnection(ws, user) {
   } else {
     // save new connection and websocket in connections
     connections.push({ ws: ws, connection: user });
-    const { data } = await axios.get(
+    const chats = await axios.get(
       `http://127.0.0.1:3000/chats/${user.user.user_id}`,
     );
 
     ws.send(
       JSON.stringify({
         type: 'loadMessages',
-        payload: data,
+        payload: chats.data,
       }),
     );
 
     console.log('New client connected!');
+    
 
     connections.forEach((el) => {
       el.ws.send(

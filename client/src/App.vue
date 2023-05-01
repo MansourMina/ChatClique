@@ -8,7 +8,10 @@
             @close="nav = 'chat'"
             :users="users"
             :ownUser="user"
+            :requests="requests"
+            :friends="friends"
             @addFriend="addFriend"
+            @update="updateData"
           />
 
           <Profile
@@ -99,8 +102,16 @@
                 <v-list-item-avatar size="50">
                   <v-badge
                     color="red"
-                    :value="requests.length"
-                    :content="requests.length"
+                    :value="
+                      requests.filter(
+                        (request) => request.to_user_id == user.user_id,
+                      ).length
+                    "
+                    :content="
+                      requests.filter(
+                        (request) => request.to_user_id == user.user_id,
+                      ).length
+                    "
                     bordered
                     overlap
                   >
@@ -444,6 +455,7 @@ export default {
     showFullNav: false,
     requests: [],
     chatRef: null,
+    friends: [],
   }),
   setup() {
     const childRef = ref(null);
@@ -470,6 +482,7 @@ export default {
       // }
       await this.getUsers();
       await this.getRequests();
+      await this.getFriends();
     }
   },
   computed: {
@@ -533,6 +546,13 @@ export default {
       });
       localStorage.setItem('user', JSON.stringify(data));
       this.getUser();
+    },
+    async getFriends() {
+      const { data } = await axios({
+        url: '/friends/' + this.user.user_id,
+        method: 'GET',
+      });
+      this.friends = data;
     },
     getStatusOfFriend(friend) {
       if (this.connectedFriends.find((user) => user.user_id == friend.user_id))
@@ -624,7 +644,7 @@ export default {
     async getUsers() {
       const { data } = await axios({
         url: '/users',
-        method: 'GET'
+        method: 'GET',
       });
       this.users = data;
     },
@@ -648,6 +668,7 @@ export default {
           status: 'requested',
         },
       });
+      this.getRequests();
     },
     async getRequests() {
       const { data } = await axios({
@@ -691,7 +712,7 @@ export default {
       return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
     },
     async setCurrentUserChat(chat, type) {
-      this.currentUserChat != chat ?? this.scrollToEnd();
+      this.scrollToEnd();
       if (type == 'toStorage')
         localStorage.setItem('currentUserChat', JSON.stringify(chat));
       this.currentUserChat = chat;
@@ -717,6 +738,9 @@ export default {
           });
         }
       }
+    },
+    async updateData() {
+      await this.getRequests();
     },
     getUser() {
       let user = JSON.parse(localStorage.getItem('user'));

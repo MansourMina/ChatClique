@@ -68,18 +68,18 @@
 
         <v-subheader>Requests</v-subheader>
 
-        <v-list-item v-for="request in requests" :key="request.request_id">
+        <v-list-item v-for="request in filterRequest" :key="request.request_id">
           <v-list-item-avatar>
             <v-img src="@/assets/placeholder.jpg"></v-img>
           </v-list-item-avatar>
 
           <v-list-item-content>
             <v-list-item-title>{{
-              request.requested_username
+              request.from_username
             }}</v-list-item-title>
 
             <v-list-item-subtitle>{{
-              request.requested_date
+              getTime(request.requested_date)
             }}</v-list-item-subtitle>
           </v-list-item-content>
 
@@ -125,8 +125,8 @@ export default {
   },
   computed: {
     online() {
-      return this.onlineFriends.filter(
-        (user) => user.user_id != this.user.user_id,
+      return this.onlineFriends.filter((user) =>
+        this.friends.map((o) => o.user_id).includes(user.user_id),
       );
     },
     offline() {
@@ -134,6 +134,9 @@ export default {
         (friend) => !this.online.map((o) => o.user_id).includes(friend.user_id),
       );
     },
+    filterRequest() {
+      return this.requests.filter(request => this.user.user_id == request.to_user_id)
+    }
   },
   methods: {
     async acceptRequest(request) {
@@ -154,6 +157,10 @@ export default {
         method: 'GET',
       });
       this.friends = data;
+    },
+    getTime(messageDate) {
+      let date = new Date(messageDate);
+      return date.toDateString().slice(0, date.toDateString().length - 5);
     },
   },
 };

@@ -134,14 +134,19 @@ async function addChatFriendship(chat_id, friendship_id) {
 async function getRequests(user_id) {
   const { rows } = await db.query(
     `SELECT request_id,
-       from_user_id,
-       to_user_id,
-       requested_date,
-       status,
-       username as requested_username,
-       name as requested_name
-from friendship_requests
-         JOIN users ON from_user_id = user_id where to_user_id = $1`,
+       fr.from_user_id,
+       fr.to_user_id,
+       fr.requested_date,
+       fr.status,
+       t.username as to_username,
+       f.username   as from_username
+from friendship_requests fr
+         JOIN users t
+ON fr.to_user_id = t.user_id JOIN users
+f
+on fr.from_user_id =
+f.user_id
+where fr.to_user_id = $1 or fr.from_user_id = $1`,
     [user_id],
   );
   return rows;
