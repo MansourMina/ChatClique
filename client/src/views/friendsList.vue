@@ -36,7 +36,7 @@
           </v-list-item-avatar>
 
           <v-list-item-content>
-            <v-list-item-title>{{ friend.name }}</v-list-item-title>
+            <v-list-item-title>{{ friend.username }}</v-list-item-title>
           </v-list-item-content>
 
           <v-list-item-action>
@@ -56,7 +56,7 @@
           </v-list-item-avatar>
 
           <v-list-item-content>
-            <v-list-item-title>{{ friend.name }}</v-list-item-title>
+            <v-list-item-title>{{ friend.username }}</v-list-item-title>
           </v-list-item-content>
 
           <v-list-item-action>

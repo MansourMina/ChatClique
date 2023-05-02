@@ -330,7 +330,11 @@
               <v-icon>mdi-arrow-left</v-icon>
             </v-app-bar-nav-icon>
 
-            <v-list-item>
+            <v-list-item
+              inactive
+              style="cursor: pointer"
+              @click="openFriendInfo(currentUserChat.friend[0])"
+            >
               <v-list-item-avatar size="50">
                 <v-img
                   width="50"
@@ -374,13 +378,13 @@
 
             <v-spacer></v-spacer>
 
-            <!-- <v-btn icon color="white">
-              <v-icon>mdi-magnify</v-icon>
+            <v-btn
+              icon
+              color="white"
+              @click="callFriend(currentUserChat.friend[0])"
+            >
+              <v-icon>mdi-video-outline</v-icon>
             </v-btn>
-
-            <v-btn icon color="white">
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn> -->
           </v-app-bar>
 
           <v-main hide-overlay style="height: 100vh">
@@ -411,6 +415,33 @@
     >
       <openImage :image="imageToOpen" @close="image = false" />
     </v-dialog>
+    <v-navigation-drawer
+      statless
+      app
+      permanent
+      right
+      v-if="showFriendInfo"
+      width="500"
+    >
+      <friendInfo :friendInfo="friendInfo" @close="showFriendInfo = false" />
+    </v-navigation-drawer>
+    <!-- <v-dialog
+      v-model="showCalling"
+      max-height="700"
+      max-width="800"
+      content-class="elevation-0"
+    >
+      <calling @close="showCalling = false" />
+    </v-dialog> -->
+
+    <v-dialog
+      v-model="call"
+      max-height="700"
+      max-width="800"
+      content-class="elevation-0"
+    >
+      <v-card>Calllling</v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -418,10 +449,12 @@
 import { ref } from 'vue';
 import Login from '@/views/Login.vue';
 import Home from '@/views/Home.vue';
-import Profile from '@/components/Profile.vue';
-import addFriend from '@/components/addFriend.vue';
-import friendsList from '@/components/friendsList.vue';
+import Profile from '@/views/Profile.vue';
+import addFriend from '@/views/addFriend.vue';
+import friendsList from '@/views/friendsList.vue';
 import openImage from '@/components/openImage.vue';
+// import calling from '@/components/calling.vue';
+import friendInfo from '@/components/friendInfo.vue';
 import ChatView from '@/views/ChatView.vue';
 import axios from 'axios';
 
@@ -435,6 +468,8 @@ export default {
     openImage,
     Profile,
     ChatView,
+    friendInfo,
+    // calling,
   },
   data: () => ({
     ws: null,
@@ -456,6 +491,10 @@ export default {
     requests: [],
     chatRef: null,
     friends: [],
+    showFriendInfo: false,
+    friendInfo: {},
+    showCalling: false,
+    call: false,
   }),
   setup() {
     const childRef = ref(null);
@@ -511,11 +550,12 @@ export default {
         (el) => el.chat_id == this.currentUserChat.chat_id,
       )[0];
     },
+
     mini() {
       if (
-        (!this.currentUserChat.friend &&
-          this.$vuetify.breakpoint.name == 'xs') ||
-        this.$vuetify.breakpoint.name == 'sm'
+        !this.currentUserChat.friend &&
+        (this.$vuetify.breakpoint.name == 'xs' ||
+          this.$vuetify.breakpoint.name == 'sm')
       )
         return '100vw';
       switch (this.$vuetify.breakpoint.name) {
@@ -559,9 +599,26 @@ export default {
         return true;
       else return false;
     },
+    callFriend(f) {
+      this.showCalling = true;
+      let friend = this.friends.find((friend) => friend.user_id == f.user_id);
+      this.ws.send(
+        JSON.stringify({
+          type: 'calling',
+          payload: {
+            caller: this.user,
+            friend: friend,
+          },
+        }),
+      );
+    },
     openImage(img) {
       this.image = true;
       this.imageToOpen = img;
+    },
+    openFriendInfo(friend) {
+      this.friendInfo = this.friends.find((f) => friend.user_id == f.user_id);
+      this.showFriendInfo = true;
     },
     sendMessage(data) {
       this.ws.send(JSON.stringify(data));
@@ -594,6 +651,9 @@ export default {
             this.connectedFriends = this.connectedFriends.filter(
               (user) => user.user_id != userdata.payload.user_id,
             );
+            break;
+          case 'getting call':
+            this.call = true;
             break;
           case 'text':
             if (

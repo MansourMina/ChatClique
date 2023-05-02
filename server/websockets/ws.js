@@ -15,6 +15,9 @@ function wsServer(httpServer) {
       if (data.type == 'read') {
         read(ws, data.payload);
       }
+      if (data.type == 'calling') {
+        callFriend(data.payload);
+      }
     });
 
     ws.on('close', () => {
@@ -78,6 +81,39 @@ function read(ws, payload) {
     .catch(function () {});
 }
 
+function callFriend(payload) {
+  console.log(payload);
+  let caller = connections.find(
+    (c) => c.connection.user.user_id == payload.caller.user_id,
+  );
+  let friend = connections.find(
+    (c) => c.connection.user.user_id == payload.friend.user_id,
+  );
+
+  if (caller && friend) {
+    let sendWebsocket = [
+      {
+        ws: caller.ws,
+        type: 'calling',
+        payload: friend.connection.user,
+      },
+      {
+        ws: friend.ws,
+        type: 'getting call',
+        payload: caller.connection.user,
+      },
+    ];
+    sendWebsocket.forEach((el) => {
+      el.ws.send(
+        JSON.stringify({
+          type: el.type,
+          payload: el.payload,
+        }),
+      );
+    });
+  }
+}
+
 async function registerConnection(ws, user) {
   // send status to client
   if (
@@ -104,7 +140,6 @@ async function registerConnection(ws, user) {
     );
 
     console.log('New client connected!');
-    
 
     connections.forEach((el) => {
       el.ws.send(
