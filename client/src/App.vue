@@ -394,6 +394,7 @@
               @openImage="openImage"
               :getMessageDate="getMessageDate"
               ref="chat"
+              @deleteMessage="deleteMessage"
             />
           </v-main>
         </div>
@@ -425,14 +426,14 @@
     >
       <friendInfo :friendInfo="friendInfo" @close="showFriendInfo = false" />
     </v-navigation-drawer>
-    <!-- <v-dialog
+    <v-dialog
       v-model="showCalling"
       max-height="700"
       max-width="800"
       content-class="elevation-0"
     >
       <calling @close="showCalling = false" />
-    </v-dialog> -->
+    </v-dialog>
 
     <v-dialog
       v-model="call"
@@ -453,7 +454,7 @@ import Profile from '@/views/Profile.vue';
 import addFriend from '@/views/addFriend.vue';
 import friendsList from '@/views/friendsList.vue';
 import openImage from '@/components/openImage.vue';
-// import calling from '@/components/calling.vue';
+import calling from '@/components/calling.vue';
 import friendInfo from '@/components/friendInfo.vue';
 import ChatView from '@/views/ChatView.vue';
 import axios from 'axios';
@@ -469,7 +470,7 @@ export default {
     Profile,
     ChatView,
     friendInfo,
-    // calling,
+    calling,
   },
   data: () => ({
     ws: null,
@@ -600,7 +601,6 @@ export default {
       else return false;
     },
     callFriend(f) {
-      this.showCalling = true;
       let friend = this.friends.find((friend) => friend.user_id == f.user_id);
       this.ws.send(
         JSON.stringify({
@@ -622,6 +622,22 @@ export default {
     },
     sendMessage(data) {
       this.ws.send(JSON.stringify(data));
+    },
+    deleteMessage(data) {
+      let message = this.messages.filter((chat) =>
+        chat.messages.find((message) => message.message_id == data.message_id),
+      );
+      this.ws.send(
+        JSON.stringify({
+          type: 'delete',
+          payload: {
+            message_id: data.message_id,
+            chat: message[0].chat_id,
+            user_id: this.user.user_id,
+            friend_id: message[0].friend[0].user_id,
+          },
+        }),
+      );
     },
     getUnread(chat) {
       return this.messages
@@ -655,6 +671,9 @@ export default {
           case 'getting call':
             this.call = true;
             break;
+          case 'calling':
+            this.showCalling = true;
+            break;
           case 'text':
             if (
               userdata.payload.message.chat_id ==
@@ -682,6 +701,14 @@ export default {
                 (chat) => chat.message_id == userdata.payload.message_id,
               ).receiver_read = true;
 
+            break;
+          case 'deleted':
+            this.messages = this.messages.map((chat) => {
+              chat.messages = chat.messages.filter(
+                (message) => message.message_id !== userdata.payload.message_id,
+              );
+              return chat;
+            });
             break;
         }
       };

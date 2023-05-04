@@ -195,6 +195,14 @@ async function updateProfile(user_id, body) {
   return rows[0];
 }
 
+async function deleteMessage(message_id) {
+  const { rows } = await db.query(
+    'Delete from messages where message_id = $1',
+    [message_id],
+  );
+  return rows;
+}
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -212,4 +220,5 @@ module.exports = {
   readMessage,
   readAllMessages,
   updateProfile,
+  deleteMessage,
 };

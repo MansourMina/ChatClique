@@ -15,6 +15,7 @@ const {
   readMessage,
   readAllMessages,
   updateProfile,
+  deleteMessage,
 } = require('../controllers/messages');
 
 router.get('/users', getUsers);
@@ -31,5 +32,7 @@ router.post('/friendship', addFriendship);
 
 router.patch('/messages/:chatId', readMessage);
 router.patch('/user/:userId', updateProfile);
+
+router.delete('/message/:messageId', deleteMessage);
 
 module.exports = router;

@@ -18,6 +18,9 @@ function wsServer(httpServer) {
       if (data.type == 'calling') {
         callFriend(data.payload);
       }
+      if (data.type == 'delete') {
+        deleteMessage(data.payload);
+      }
     });
 
     ws.on('close', () => {
@@ -65,6 +68,26 @@ function sendMessage(payload) {
   });
 }
 
+function deleteMessage(payload) {
+  axios
+    .delete('http://localhost:3000/message/' + payload.message_id)
+    .then(() => {})
+
+    .catch(function () {});
+  connections.forEach((el) => {
+    if (
+      el.connection.user.user_id == payload.user_id ||
+      el.connection.user.user_id == payload.friend_id
+    ) {
+      el.ws.send(
+        JSON.stringify({
+          type: 'deleted',
+          payload,
+        }),
+      );
+    }
+  });
+}
 function read(ws, payload) {
   ws.send(
     JSON.stringify({

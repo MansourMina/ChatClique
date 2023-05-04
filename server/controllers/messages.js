@@ -50,15 +50,13 @@ const login = asyncHandler(async (req, res) => {
       const comparePassword = await bcrypt.compare(password, user.password);
       if (comparePassword) {
         req.session.userId = user.user_id;
-        res
-          .status(200)
-          .json({
-            username: user.username,
-            name: user.name,
-            user_id: user.user_id,
-            email: user.email,
-            image: user.image,
-          });
+        res.status(200).json({
+          username: user.username,
+          name: user.name,
+          user_id: user.user_id,
+          email: user.email,
+          image: user.image,
+        });
       } else res.status(401).send('Wrong email or password');
     } else res.status(401).send('Wrong email or password');
   } else res.status(400).send('Login failed');
@@ -135,6 +133,11 @@ const updateProfile = asyncHandler(async (req, res) => {
   res.status(200).json(profile);
 });
 
+const deleteMessage = asyncHandler(async (req, res) => {
+  const message = await messagesModel.deleteMessage(req.params.messageId);
+  res.status(200).json(message);
+});
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -149,4 +152,5 @@ module.exports = {
   getFriends,
   readMessage,
   updateProfile,
+  deleteMessage,
 };

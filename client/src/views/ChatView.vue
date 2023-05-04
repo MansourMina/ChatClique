@@ -22,48 +22,96 @@
             }}</v-card-text></v-card
           >
         </v-container>
+
         <div
           :style="`text-align: ${
             message.sender_id == user.user_id ? 'right' : 'left'
           } `"
         >
-          <v-card
-            class="elevation-3 d-inline-block"
-            max-width="100%"
-            :color="message.sender_id == user.user_id ? '#d9fdd3' : 'white'"
-            style="text-align: left"
-          >
-            <v-card-text
-              class="pt-2 black--text mb-0 pb-0"
-              v-if="message.type == 'text'"
-            >
-              {{ message.message }}
-            </v-card-text>
-            <v-img
-              v-if="message.type == 'image'"
-              max-width="250"
-              :src="message.message"
-              @click="$emit('openImage', message.message)"
-              style="cursor: pointer"
-            ></v-img>
-            <div class="float-right mr-1">
-              <span
-                class="text-caption grey--text text--darken-1 ml-2"
-                style="font-size: 0.65rem !important"
+          <v-menu offset-y rounded max-width="100">
+            <template v-slot:activator="{ on, attrs }">
+              <v-card
+                class="elevation-3 d-inline-block"
+                max-width="700"
+                :color="message.sender_id == user.user_id ? '#d9fdd3' : 'white'"
+                style="text-align: left"
+                @mouseover="showMenu = index"
+                @mouseleave="showMenu = null"
               >
-                {{ time(message.send_date) }}
-              </span>
-              <span v-if="message.sender_id == user.user_id">
-                <v-icon
-                  small
-                  v-if="message.receiver_read"
-                  color="green accent-4"
-                  >mdi-check-all</v-icon
+                <v-card-text
+                  class="pt-2 black--text mb-0 pb-0"
+                  v-if="message.type == 'text'"
                 >
-                <v-icon small v-else>mdi-check-all</v-icon>
-              </span>
-            </div>
-          </v-card>
+                  {{ message.message }}
+                </v-card-text>
+                <v-img
+                  v-if="message.type == 'image'"
+                  max-width="250"
+                  :src="message.message"
+                  @click="$emit('openImage', message.message)"
+                  style="cursor: pointer"
+                ></v-img>
+                <div class="float-right mr-1">
+                  <span
+                    class="text-caption grey--text text--darken-1 ml-2"
+                    style="font-size: 0.65rem !important"
+                  >
+                    {{ time(message.send_date) }}
+                  </span>
+                  <span v-if="message.sender_id == user.user_id">
+                    <v-icon
+                      small
+                      v-if="message.receiver_read"
+                      color="green accent-4"
+                      >mdi-check-all</v-icon
+                    >
+                    <v-icon small v-else>mdi-check-all</v-icon>
+                  </span>
+                </div>
+                <v-btn
+                  icon
+                  :large="message.type == 'image'"
+                  :color="`${message.type == 'image' ? 'white' : 'black'}`"
+                  :style="`
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    background-color: ${
+                      message.sender_id == user.user_id ? '#d9fdd3' : 'white'
+                    };
+                    ${message.type == 'image' ? 'background-color: none' : ''}
+                    `"
+                  v-show="showMenu == index || message.type == 'image' "
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  <v-icon>mdi-chevron-down</v-icon>
+                </v-btn>
+              </v-card>
+            </template>
+            <v-list dense style="width: min-content">
+              <v-list-item
+                @click="copyText(message.message)"
+                v-if="message.type == 'text'"
+              >
+                <v-list-item-icon class="mr-2">
+                  <v-icon small>mdi-content-copy</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>Copy</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+
+              <v-list-item @click="deleteText(message)">
+                <v-list-item-icon class="mr-2">
+                  <v-icon color="red" small>mdi-delete</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content class="red--text">
+                  <v-list-item-title>Delete</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </div>
         <v-container
           class="text-center"
@@ -143,10 +191,23 @@
         <v-icon>mdi-send</v-icon>
       </v-btn>
     </v-footer>
+    <v-snackbar
+      v-model="showCopy"
+      :timeout="2000"
+      rounded="pill"
+      color="grey lighten-1"
+    >
+      <span class="black--text">Text copied</span>
+
+      <template v-slot:action="{ attrs }">
+        <v-btn color="black" icon v-bind="attrs" @click="showCopy = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 <script>
-import { ref } from 'vue';
 export default {
   name: 'MessageViewBody',
   props: {
@@ -158,24 +219,10 @@ export default {
     },
   },
   components: {},
-  setup() {
-    const childElementRef = ref(null);
-
-    const childMethod = () => {
-      console.log('Child Method triggered!');
-      // do something in child component
-    };
-
-    return {
-      childElementRef,
-      childMethod,
-    };
-  },
 
   created() {
     this.getUser();
-      this.scrollToEnd();
-
+    this.scrollToEnd();
   },
   data() {
     return {
@@ -184,9 +231,19 @@ export default {
       selectedFile: null,
       showFile: false,
       messageToSend: 'text',
+      showCopy: false,
+      showMenu: null,
     };
   },
   methods: {
+    async deleteText(message) {
+      this.$emit('deleteMessage', message);
+    },
+    async copyText(message) {
+      await navigator.clipboard.writeText(message);
+
+      this.showCopy = true;
+    },
     getUser() {
       let user = JSON.parse(localStorage.getItem('user'));
       if (user != null) {
