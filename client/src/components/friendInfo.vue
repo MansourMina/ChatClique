@@ -22,6 +22,8 @@
           width="200"
           v-if="friendInfo.image"
           :src="friendInfo.image"
+          @click="$emit('openImage', friendInfo.image)"
+          style="cursor: pointer"
         ></v-img>
         <v-img v-else src="@/assets/placeholder.jpg" width="200"></v-img>
       </v-list-item-avatar>

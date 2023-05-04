@@ -2,7 +2,7 @@
   <v-card max-width="800" color="transparent" elevation="0">
     <v-toolbar dark color="transparent" elevation="0">
       <v-spacer></v-spacer>
-      <v-btn icon dark color="black" @click="$emit('close')" large>
+      <v-btn icon dark  @click="$emit('close')" large>
         <v-icon>mdi-close</v-icon>
       </v-btn>
     </v-toolbar>

@@ -265,6 +265,12 @@ export default {
       type: Function,
     },
   },
+  created() {
+    let user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      this.user = user;
+    }
+  },
   data() {
     return {
       showTooltip: false,
@@ -299,6 +305,7 @@ export default {
       showSignUp: false,
       step: 1,
       loading: false,
+      user: {},
     };
   },
   methods: {
@@ -317,7 +324,7 @@ export default {
         const user = localStorage.getItem('user');
         if (user != null) {
           this.$router.push(`/`);
-          this.$router.go();
+          // this.$router.go();
         }
         return;
       } catch (err) {

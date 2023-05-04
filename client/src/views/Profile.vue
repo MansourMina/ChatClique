@@ -3,8 +3,8 @@
     <v-app-bar color="#00a884" height="100" elevation="0" rounded="0">
       <v-list color="transparent" class="pl-0 ml-0">
         <v-list-item class="mt-4 pl-0 ml-0">
-          <v-btn icon @click="$emit('close')" aria-label="Go Back">
-            <v-icon class="mr-3" color="white">mdi-arrow-left</v-icon>
+          <v-btn icon @click="$emit('close')" aria-label="Go Back" class="mr-3">
+            <v-icon color="white">mdi-arrow-left</v-icon>
           </v-btn>
           <v-list-item-content>
             <v-list-item-title class="text-h6 white--text">

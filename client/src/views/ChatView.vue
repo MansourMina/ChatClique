@@ -28,7 +28,7 @@
             message.sender_id == user.user_id ? 'right' : 'left'
           } `"
         >
-          <v-menu offset-y rounded max-width="100">
+          <v-menu offset-y top max-width="120" attach="#index" class="mt-5">
             <template v-slot:activator="{ on, attrs }">
               <v-card
                 class="elevation-3 d-inline-block"
@@ -37,6 +37,7 @@
                 style="text-align: left"
                 @mouseover="showMenu = index"
                 @mouseleave="showMenu = null"
+                id="index"
               >
                 <v-card-text
                   class="pt-2 black--text mb-0 pb-0"
@@ -81,7 +82,7 @@
                     };
                     ${message.type == 'image' ? 'background-color: none' : ''}
                     `"
-                  v-show="showMenu == index || message.type == 'image' "
+                  v-show="showMenu == index || message.type == 'image'"
                   v-bind="attrs"
                   v-on="on"
                 >
@@ -89,7 +90,7 @@
                 </v-btn>
               </v-card>
             </template>
-            <v-list dense style="width: min-content">
+            <v-list dense>
               <v-list-item
                 @click="copyText(message.message)"
                 v-if="message.type == 'text'"
@@ -99,6 +100,17 @@
                 </v-list-item-icon>
                 <v-list-item-content>
                   <v-list-item-title>Copy</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item
+                @click="downloadImage(message.message)"
+                v-if="message.type == 'image'"
+              >
+                <v-list-item-icon class="mr-2">
+                  <v-icon small>mdi-download</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>Download</v-list-item-title>
                 </v-list-item-content>
               </v-list-item>
 
@@ -221,8 +233,9 @@ export default {
   components: {},
 
   created() {
-    this.getUser();
     this.scrollToEnd();
+
+    this.getUser();
   },
   data() {
     return {
@@ -243,6 +256,22 @@ export default {
       await navigator.clipboard.writeText(message);
 
       this.showCopy = true;
+    },
+    downloadImage(img) {
+      const downloadLink = document.createElement('a');
+      downloadLink.href = img;
+      let date = new Date();
+      let dateName = date
+        .toDateString()
+        .slice(0, date.toDateString().length - 5);
+      let time = `${
+        date.getHours() <= 9 ? '0' + date.getHours() : date.getHours()
+      }:${
+        date.getMinutes() <= 9 ? '0' + date.getMinutes() : date.getMinutes()
+      }`;
+
+      downloadLink.download = `ChatClique Image ${dateName} ${time}.jpeg`;
+      downloadLink.click();
     },
     getUser() {
       let user = JSON.parse(localStorage.getItem('user'));
