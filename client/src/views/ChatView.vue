@@ -16,8 +16,8 @@
             style="text-align: center; display: inline-block"
             class="mt-3 mb-0 pa-0 elevation-0 rounded-pill"
             width="200"
-            color="blue-grey lighten-5 "
-            ><v-card-text class="pa-0">{{
+            color="transparent "
+            ><v-card-text class="pa-0 text--disabled">{{
               getMessageDate(message.send_date)
             }}</v-card-text></v-card
           >
@@ -28,19 +28,28 @@
             message.sender_id == user.user_id ? 'right' : 'left'
           } `"
         >
-          <v-menu offset-y top max-width="120" attach="#index" class="mt-5">
+          <v-menu
+            top
+            :left="message.sender_id == user.user_id"
+            :right="message.sender_id != user.user_id"
+            max-width="120"
+            attach="#index"
+          >
             <template v-slot:activator="{ on, attrs }">
               <v-card
                 class="elevation-3 d-inline-block"
                 max-width="700"
-                :color="message.sender_id == user.user_id ? '#d9fdd3' : 'white'"
-                style="text-align: left"
+                :color="
+                  message.sender_id == user.user_id
+                    ? ownMessageColor.background
+                    : 'white'
+                "
                 @mouseover="showMenu = index"
                 @mouseleave="showMenu = null"
                 id="index"
               >
                 <v-card-text
-                  class="pt-2 black--text mb-0 pb-0"
+                  :class="`pt-2 black--text mb-0 pb-0 ${message.sender_id == user.user_id ? ownMessageColor.text:'black'}--text`"
                   v-if="message.type == 'text'"
                 >
                   {{ message.message }}
@@ -54,7 +63,7 @@
                 ></v-img>
                 <div class="float-right mr-1">
                   <span
-                    class="text-caption grey--text text--darken-1 ml-2"
+                    :class="`text-caption ${message.sender_id == user.user_id ? ownMessageColor.text+'--text':'grey--text text--darken-1'}  ml-2`"
                     style="font-size: 0.65rem !important"
                   >
                     {{ time(message.send_date) }}
@@ -78,11 +87,16 @@
                     top: 0;
                     right: 0;
                     background-color: ${
-                      message.sender_id == user.user_id ? '#d9fdd3' : 'white'
+                      message.sender_id == user.user_id
+                        ? ownMessageColor.background
+                        : 'white'
                     };
                     ${message.type == 'image' ? 'background-color: none' : ''}
                     `"
-                  v-show="showMenu == index || message.type == 'image'"
+                  v-show="
+                    message.sender_id == user.user_id &&
+                    (showMenu == index || message.type == 'image')
+                  "
                   v-bind="attrs"
                   v-on="on"
                 >
@@ -140,8 +154,8 @@
             style="text-align: center; display: inline-block"
             class="mt-3 mb-0 pa-0 elevation-0 rounded-pill"
             width="200"
-            color="blue-grey lighten-5 "
-            ><v-card-text class="pa-0">{{
+            color="transparent"
+            ><v-card-text class="pa-0 text--disabled">{{
               getMessageDate(currentChat.messages[index + 1].send_date)
             }}</v-card-text></v-card
           >
@@ -246,6 +260,7 @@ export default {
       messageToSend: 'text',
       showCopy: false,
       showMenu: null,
+      ownMessageColor: { background: '#2962FF', text: 'white' },
     };
   },
   methods: {

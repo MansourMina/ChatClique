@@ -2,7 +2,15 @@
   <v-app>
     <div v-if="user.user_id">
       <v-card tile id="application">
-        <v-navigation-drawer :width="mini" statless app permanent>
+        <v-navigation-drawer
+          v-model="mini.drawer"
+          :width="mini.width"
+          statless
+          app
+          permanent
+          floating
+          :mini-variant.sync="closeNavigation"
+        >
           <addFriend
             v-if="nav == 'addFriend'"
             @close="nav = 'chat'"
@@ -28,53 +36,37 @@
             :onlineFriends="connectedFriends"
           />
           <div v-if="nav == 'chat'">
-            <v-app-bar
-              color="#00a884"
-              height="100"
-              elevation="0"
-              rounded="0"
-              class="mb-0"
-            >
-              <v-list color="transparent" class="pa-3 ml-0 pl-0">
-                <v-list-item class="mt-4 pl-1">
-                  <v-list-item-avatar size="50">
-                    <v-img
-                      width="50"
-                      v-if="user.image"
-                      :src="user.image"
-                      @click="openImage(user.image)"
-                      style="cursor: pointer"
-                    ></v-img>
-                    <v-img
-                      v-else
-                      src="@/assets/placeholder.jpg"
-                      width="50"
-                    ></v-img>
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title class="text-h6 white--text">
-                      {{ user.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="white--text">
-                      {{ user.username
-                      }}<span class="text--disabled font-weight-black"
-                        >#{{ user.user_id }}
-                      </span>
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
-              <v-spacer></v-spacer>
-              <div class="mt-6">
+            <v-list color="transparent" class="pa-3">
+              <v-list-item class="mt-4 pl-1">
+                <v-list-item-avatar size="50">
+                  <v-img
+                    width="50"
+                    v-if="user.image"
+                    :src="user.image"
+                    @click="openImage(user.image)"
+                    style="cursor: pointer"
+                  ></v-img>
+                  <v-img
+                    v-else
+                    src="@/assets/placeholder.jpg"
+                    width="50"
+                  ></v-img>
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title class="text-h6">
+                    {{ user.name }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ user.username
+                    }}<span class="text--disabled font-weight-black"
+                      >#{{ user.user_id }}
+                    </span>
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+
                 <v-menu bottom left offset-y>
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      dark
-                      icon
-                      v-bind="attrs"
-                      v-on="on"
-                      aria-label="User Menu"
-                    >
+                    <v-btn icon v-bind="attrs" v-on="on" aria-label="User Menu">
                       <v-icon>mdi-dots-vertical</v-icon>
                     </v-btn>
                   </template>
@@ -89,10 +81,17 @@
                     </v-list-item>
                   </v-list>
                 </v-menu>
-              </div>
-            </v-app-bar>
+                <v-btn
+                  icon
+                  @click.stop="closeNavigation = !closeNavigation"
+                  class="hidden-sm-and-down"
+                >
+                  <v-icon>mdi-chevron-left</v-icon>
+                </v-btn>
+              </v-list-item>
+            </v-list>
 
-            <v-list color="transparent" class="pa-0 ma-0d-flex">
+            <v-list color="transparent" class="pa-0 ma-0 d-flex">
               <v-list-item
                 link
                 @click="nav = 'friends'"
@@ -150,17 +149,11 @@
 
             <v-divider></v-divider>
 
-            <v-list
-              three-line
-              class="mt-0 pt-0 mb-10 pb-10"
-              style="overflow-y: scroll"
-              max-height="80vh"
-              v-if="messages.length > 0"
-            >
+            <v-list max-height="80vh" v-if="messages.length > 0">
               <v-list-item
                 link
                 v-for="chat in chatsWithMessages"
-                :class="`pl-4 pr-3 ${
+                :class="`pa-3 ${
                   currentUserChat.chat_id == chat.chat_id && show == 'chat'
                     ? 'blue-grey lighten-5'
                     : ''
@@ -236,7 +229,7 @@
                     {{ lastMessage(chat) }}
                   </v-list-item-subtitle>
                 </v-list-item-content>
-                <v-list-item-action>
+                <v-list-item-action class="mr-4">
                   <p>
                     <v-list-item-action-text
                       :class="`${chat.unread > 0 ? 'green' : ''}--text`"
@@ -265,7 +258,7 @@
                 class="ma-3"
                 v-if="
                   searchChats.filter((chat) => chat.messages.length == 0)
-                    .length > 0
+                    .length > 0 && !closeNavigation
                 "
               >
                 <v-col cols="4" class="text-center mt-3">
@@ -276,12 +269,13 @@
                   <v-divider />
                 </v-col>
               </v-row>
+              <v-divider v-show="closeNavigation"></v-divider>
               <v-list-item
                 link
                 v-for="chat in searchChats.filter(
                   (chat) => chat.messages.length == 0,
                 )"
-                :class="`pl-4 pr-3 ${
+                :class="`pa-3 ${
                   currentUserChat.chat_id == chat.chat_id && show == 'chat'
                     ? 'blue-grey lighten-5'
                     : ''
@@ -337,7 +331,7 @@
         </v-navigation-drawer>
         <div v-if="show == 'chat' && currentUserChat.friend">
           <v-app-bar
-            color="#00a884"
+            color="transparent"
             class="pa-3"
             height="100"
             elevation="0"
@@ -345,69 +339,68 @@
             rounded="0"
           >
             <v-app-bar-nav-icon
-              color="white"
               class="hidden-sm-and-up"
               @click="showFullNav = true"
             >
               <v-icon>mdi-arrow-left</v-icon>
             </v-app-bar-nav-icon>
 
-            <v-list-item
-              inactive
-              style="cursor: pointer"
-              @click="openFriendInfo(currentUserChat.friend[0])"
-            >
-              <v-list-item-avatar size="50">
-                <v-img
-                  width="50"
-                  v-if="
-                    currentUserChat.friend[0].image != null &&
-                    currentUserChat.friend[0].image &&
-                    currentUserChat.friend[0].image.length > 0
-                  "
-                  :src="currentUserChat.friend[0].image"
-                ></v-img>
-
-                <v-img width="50" v-else src="@/assets/placeholder.jpg"></v-img>
-              </v-list-item-avatar>
-              <v-list-item-content>
-                <v-list-item-title class="text-h6 white--text">
-                  {{
-                    Object.keys(currentUserChat).length > 0
-                      ? currentUserChat.friend[0].username
-                      : ''
-                  }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="white--text">
-                  <v-icon
-                    :color="
-                      getStatusOfFriend(currentUserChat.friend[0])
-                        ? 'green accent-4'
-                        : 'red'
+            <v-list color="transparent" class="pa-3 ml-0 pl-0">
+              <v-list-item
+                inactive
+                style="cursor: pointer"
+                @click="openFriendInfo(currentUserChat.friend[0])"
+              >
+                <v-list-item-avatar size="50">
+                  <v-img
+                    width="50"
+                    v-if="
+                      currentUserChat.friend[0].image != null &&
+                      currentUserChat.friend[0].image &&
+                      currentUserChat.friend[0].image.length > 0
                     "
-                    >mdi-circle-medium</v-icon
-                  >
-                  {{
-                    getStatusOfFriend(currentUserChat.friend[0])
-                      ? 'online'
-                      : 'offline'
-                  }}
-                </v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+                    :src="currentUserChat.friend[0].image"
+                  ></v-img>
 
+                  <v-img
+                    width="50"
+                    v-else
+                    src="@/assets/placeholder.jpg"
+                  ></v-img>
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title class="text-h6">
+                    {{
+                      Object.keys(currentUserChat).length > 0
+                        ? currentUserChat.friend[0].username
+                        : ''
+                    }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle class="">
+                    <v-icon
+                      :color="
+                        getStatusOfFriend(currentUserChat.friend[0])
+                          ? 'green accent-4'
+                          : 'red'
+                      "
+                      >mdi-circle-medium</v-icon
+                    >
+                    {{
+                      getStatusOfFriend(currentUserChat.friend[0])
+                        ? 'online'
+                        : 'offline'
+                    }}
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
             <v-spacer></v-spacer>
-
-            <v-btn
-              icon
-              color="white"
-              @click="callFriend(currentUserChat.friend[0])"
-            >
+            <v-btn icon @click="callFriend(currentUserChat.friend[0])">
               <v-icon>mdi-video-outline</v-icon>
             </v-btn>
           </v-app-bar>
 
-          <v-main hide-overlay style="height: 100vh">
+          <v-main hide-overlay style="height: 100vh" class="grey lighten-4" >
             <ChatView
               @sendMessage="sendMessage"
               :currentChat="currentChat"
@@ -520,6 +513,7 @@ export default {
     friendInfo: {},
     showCalling: false,
     call: false,
+    closeNavigation: false,
   }),
   setup() {
     const childRef = ref(null);
@@ -578,18 +572,18 @@ export default {
 
     mini() {
       if (!this.currentUserChat.friend && this.$vuetify.breakpoint.name == 'xs')
-        return '100vw';
+        return { width: '100vw', drawer: false };
       switch (this.$vuetify.breakpoint.name) {
         case 'xs':
-          return this.showFullNav ? '100vw' : '0';
+          return { width: this.showFullNav ? '100vw' : '0', drawer: false };
         case 'sm':
-          return '400';
+          return { width: '400', drawer: true };
         case 'md':
-          return '500';
+          return { width: '500', drawer: true };
         case 'lg':
-          return '500';
+          return { width: '500', drawer: true };
         case 'xl':
-          return '500';
+          return { width: '500', drawer: true };
         default:
           return false;
       }
@@ -888,10 +882,5 @@ export default {
   height: 100%;
   overflow-y: hidden;
   overflow-x: hidden;
-}
-
-#application {
-  background: url('../assets/background.png') center fixed !important;
-  background-size: cover;
 }
 </style>
