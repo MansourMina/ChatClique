@@ -34,9 +34,15 @@
             :user="user"
             :requests="requests"
             :onlineFriends="connectedFriends"
+            @setCurrentUserChat="setChatByFriend"
           />
 
-          <createGroup v-if="nav == 'createGroup'" :friends="friends" @close="nav = 'chat'"/>
+          <createGroup
+            v-if="nav == 'createGroup'"
+            :friends="friends"
+            @close="nav = 'chat'"
+            :user="user"
+          />
           <div v-if="nav == 'chat'">
             <v-list color="transparent" class="pa-3">
               <v-list-item class="mt-4 pl-1">
@@ -73,16 +79,27 @@
                     </v-btn>
                   </template>
 
-                  <v-list width="150" class="pt-0 pb-0">
-                    <v-list-item link @click="nav = 'createGroup'">
-                      <v-list-item-title>New Group</v-list-item-title>
+                  <v-list width="150" class="pt-0 pb-0 ma-1">
+                    <v-list-item link @click="nav = 'createGroup'" class="pa-0">
+                      <v-list-item-avatar
+                        ><v-icon>mdi-account-group-outline</v-icon>
+                      </v-list-item-avatar>
+                      <v-list-item-title>New group</v-list-item-title>
                     </v-list-item>
-                    <v-list-item link @click="nav = 'profile'">
+                    <v-list-item link @click="nav = 'profile'" class="pa-0">
+                      <v-list-item-avatar
+                        ><v-icon>mdi-account-edit-outline</v-icon>
+                      </v-list-item-avatar>
                       <v-list-item-title>Profile</v-list-item-title>
                     </v-list-item>
                     <v-divider></v-divider>
-                    <v-list-item link @click="logout()">
-                      <v-list-item-title>Log out</v-list-item-title>
+                    <v-list-item link dark @click="logout()" class="pa-0">
+                      <v-list-item-avatar
+                        ><v-icon color="red accent-4">mdi-logout</v-icon>
+                      </v-list-item-avatar>
+                      <v-list-item-title class="red--text text--accent-4"
+                        >Log out</v-list-item-title
+                      >
                     </v-list-item>
                   </v-list>
                 </v-menu>
@@ -165,7 +182,7 @@
                 }`"
                 :key="chat.user_id"
                 @click="
-                  setCurrentUserChat(chat, 'toStorage'),
+                  setCurrentUserChat(chat),
                     (show = 'chat'),
                     (showFullNav = false)
                 "
@@ -287,7 +304,7 @@
                 }`"
                 :key="chat.user_id"
                 @click="
-                  setCurrentUserChat(chat, 'toStorage'),
+                  setCurrentUserChat(chat),
                     (show = 'chat'),
                     (showFullNav = false)
                 "
@@ -494,7 +511,7 @@ export default {
     ChatView,
     friendInfo,
     calling,
-    createGroup
+    createGroup,
   },
   data: () => ({
     ws: null,
@@ -571,6 +588,7 @@ export default {
         el.friend[0].username.includes(this.search),
       );
     },
+
     currentChat() {
       return this.messages.filter(
         (el) => el.chat_id == this.currentUserChat.chat_id,
@@ -597,6 +615,12 @@ export default {
     },
   },
   methods: {
+    setChatByFriend(friend) {
+      let chatofFriend = this.messages.find(
+        (chat) => chat.friend[0].user_id == friend.user_id,
+      );
+      this.setCurrentUserChat(chatofFriend);
+    },
     async updateProfile(body) {
       const { data } = await axios({
         url: '/user/' + this.user.user_id,
@@ -819,10 +843,11 @@ export default {
       const lastMessage = chat.messages[chat.messages.length - 1];
       return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
     },
-    async setCurrentUserChat(chat, type) {
+    async setCurrentUserChat(chat) {
+      this.show = 'chat';
       this.scrollToEnd();
-      if (type == 'toStorage')
-        localStorage.setItem('currentUserChat', JSON.stringify(chat));
+      // if (type == 'toStorage')
+      //   localStorage.setItem('currentUserChat', JSON.stringify(chat));
       this.currentUserChat = chat;
       if (this.messages.length > 0) {
         let unreadMessages = this.messages

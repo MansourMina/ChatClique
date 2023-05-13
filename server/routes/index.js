@@ -16,6 +16,7 @@ const {
   readAllMessages,
   updateProfile,
   deleteMessage,
+  createGroup,
 } = require('../controllers/messages');
 
 router.get('/users', getUsers);
@@ -29,6 +30,7 @@ router.post('/login', login);
 router.post('/register', register);
 router.post('/request', postRequest);
 router.post('/friendship', addFriendship);
+router.post('/group', createGroup);
 
 router.patch('/messages/:chatId', readMessage);
 router.patch('/user/:userId', updateProfile);

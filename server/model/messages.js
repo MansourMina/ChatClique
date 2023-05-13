@@ -118,8 +118,8 @@ async function addFriendship(body) {
 
 async function addChat(date) {
   const { rows } = await db.query(
-    'INSERT INTO chats (created_date) VALUES ($1) returning chat_id',
-    [date],
+    'INSERT INTO chats (created_date, type) VALUES ($1, $2) returning chat_id',
+    [date, 'direct'],
   );
   return rows[0];
 }
@@ -203,6 +203,23 @@ async function deleteMessage(message_id) {
   return rows;
 }
 
+async function createGroup(group) {
+  const { rows } = await db.query(
+    'INSERT INTO chats (created_date, chat_name, admin_user_id, chat_type ) VALUES ($1, $2, $3) returning chat_id',
+    [group.created_date, group.group_name, group.created_by_user_id, 'group'],
+  );
+  return rows[0];
+}
+
+async function addGroupMembers(group_id, members) {
+  for (const member of members) {
+    await db.query(
+      'INSERT INTO group_members (group_id, user_id, since_date) VALUES ($1, $2, $3) returning group_member_id',
+      [group_id, member.user_id, new Date()],
+    );
+  }
+}
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -221,4 +238,6 @@ module.exports = {
   readAllMessages,
   updateProfile,
   deleteMessage,
+  createGroup,
+  addGroupMembers,
 };

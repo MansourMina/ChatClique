@@ -36,8 +36,8 @@
           </v-list-item-content>
 
           <v-list-item-action>
-            <v-btn icon>
-              <v-icon color="grey lighten-1">mdi-information</v-icon>
+            <v-btn icon @click="$emit('setCurrentUserChat', friend)">
+              <v-icon color="#006bff">mdi-message-text</v-icon>
             </v-btn>
           </v-list-item-action>
         </v-list-item>
@@ -56,8 +56,8 @@
           </v-list-item-content>
 
           <v-list-item-action>
-            <v-btn icon>
-              <v-icon color="grey lighten-1">mdi-information</v-icon>
+            <v-btn icon @click="$emit('setCurrentUserChat', friend)">
+              <v-icon color="#006bff">mdi-forum-outline</v-icon>
             </v-btn>
           </v-list-item-action>
         </v-list-item>

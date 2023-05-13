@@ -42,6 +42,13 @@ const addFriendship = asyncHandler(async (req, res) => {
   await messagesModel.addChatFriendship(chat.chat_id, friendship.friendship_id);
   res.status(200).json(friendship);
 });
+
+const createGroup = asyncHandler(async (req, res) => {
+  const group = await messagesModel.createGroup(req.body);
+  await messagesModel.addGroupMembers(group.chat_id, req.body.members);
+  res.status(200).json(group);
+});
+
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (email && password) {
@@ -153,4 +160,5 @@ module.exports = {
   readMessage,
   updateProfile,
   deleteMessage,
+  createGroup,
 };
