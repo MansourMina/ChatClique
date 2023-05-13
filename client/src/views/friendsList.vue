@@ -1,7 +1,7 @@
 <template>
   <div style="background-color: white; height: 100%">
     <v-list color="transparent" class="pl-0 ml-0">
-      <v-list-item class="mt-4 pl-0 ml-0">
+      <v-list-item class="mt-4 pl-2 ml-0">
         <v-btn icon @click="$emit('close')" aria-label="Go Back" class="mr-3">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>

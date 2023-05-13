@@ -1,7 +1,7 @@
 <template>
   <div style="height: 100%">
     <v-list color="transparent" class="pl-0 ml-0">
-      <v-list-item class="mt-4 pl-0 ml-0">
+      <v-list-item class="mt-4 pl-2 ml-0">
         <v-btn icon @click="$emit('close')" class="mr-3">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
@@ -140,7 +140,6 @@ export default {
           `${request.from_username.toLowerCase()}#${request.from_user_id}` ==
           this.searchAddNewFriend.toLowerCase(),
       );
-      console.log(findRequest);
       await axios({
         url: '/friendship',
         method: 'POST',

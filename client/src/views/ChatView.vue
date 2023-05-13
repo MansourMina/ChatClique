@@ -4,10 +4,10 @@
       fluid
       style="overflow-y: scroll; height: 100%"
       ref="container"
-      v-if="currentChat"
+      v-if="currentChat.messages.length > 0"
     >
       <v-container
-        class="pb-3 px-0"
+        class="pb-3 px-0 px-lg-5"
         v-for="(message, index) in currentChat.messages"
         :key="message.message_id"
       >
@@ -29,11 +29,10 @@
           } `"
         >
           <v-menu
-            top
-            :left="message.sender_id == user.user_id"
-            :right="message.sender_id != user.user_id"
+            offset-y
+            left
             max-width="120"
-            attach="#index"
+            :attach="`#index${message.message_id}`"
           >
             <template v-slot:activator="{ on, attrs }">
               <v-card
@@ -46,10 +45,15 @@
                 "
                 @mouseover="showMenu = index"
                 @mouseleave="showMenu = null"
-                id="index"
+                :id="`index${message.message_id}`"
+                rounded
               >
                 <v-card-text
-                  :class="`pt-2 black--text mb-0 pb-0 ${message.sender_id == user.user_id ? ownMessageColor.text:'black'}--text`"
+                  :class="`pb-2 pt-2 black--text  ${
+                    message.sender_id == user.user_id
+                      ? ownMessageColor.text
+                      : 'black'
+                  }--text`"
                   v-if="message.type == 'text'"
                 >
                   {{ message.message }}
@@ -61,25 +65,10 @@
                   @click="$emit('openImage', message.message)"
                   style="cursor: pointer"
                 ></v-img>
-                <div class="float-right mr-1">
-                  <span
-                    :class="`text-caption ${message.sender_id == user.user_id ? ownMessageColor.text+'--text':'grey--text text--darken-1'}  ml-2`"
-                    style="font-size: 0.65rem !important"
-                  >
-                    {{ time(message.send_date) }}
-                  </span>
-                  <span v-if="message.sender_id == user.user_id">
-                    <v-icon
-                      small
-                      v-if="message.receiver_read"
-                      color="green accent-4"
-                      >mdi-check-all</v-icon
-                    >
-                    <v-icon small v-else>mdi-check-all</v-icon>
-                  </span>
-                </div>
+
                 <v-btn
                   icon
+                  small
                   :large="message.type == 'image'"
                   :color="`${message.type == 'image' ? 'white' : 'black'}`"
                   :style="`
@@ -103,6 +92,23 @@
                   <v-icon>mdi-chevron-down</v-icon>
                 </v-btn>
               </v-card>
+              <div class="mr-1">
+                <span
+                  class="text--disabled"
+                  style="font-size: 0.65rem !important"
+                >
+                  {{ time(message.send_date) }}
+                </span>
+                <span v-if="message.sender_id == user.user_id">
+                  <v-icon
+                    small
+                    v-if="message.receiver_read"
+                    color="green accent-4"
+                    >mdi-check-all</v-icon
+                  >
+                  <v-icon small v-else>mdi-check-all</v-icon>
+                </span>
+              </div>
             </template>
             <v-list dense>
               <v-list-item
@@ -162,6 +168,25 @@
         </v-container>
       </v-container>
     </v-container>
+    <v-container
+      fluid
+      style="
+        overflow-y: scroll;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      "
+      ref="container"
+      v-else
+    >
+      <div class="text-center">
+        <v-icon x-large class="text--disabled" style="font-size: 100px;">mdi-message-text</v-icon>
+        <h2 class="text--secondary">No chat messages yet</h2>
+        <span class="text--disabled">Start the conversation!</span>
+      </div>
+    </v-container>
+
     <v-footer padless color="#f0f2f5" inset app>
       <v-btn
         color="black"
@@ -248,7 +273,6 @@ export default {
 
   created() {
     this.scrollToEnd();
-
     this.getUser();
   },
   data() {
@@ -260,7 +284,7 @@ export default {
       messageToSend: 'text',
       showCopy: false,
       showMenu: null,
-      ownMessageColor: { background: '#2962FF', text: 'white' },
+      ownMessageColor: { background: '#006bff', text: 'white' },
     };
   },
   methods: {

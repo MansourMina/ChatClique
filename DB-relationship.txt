@@ -4,16 +4,20 @@ user_id (PK)
 username
 email
 password
+name
+image
 
 FRIENDSHIPS
 ----------
 friendship_id (PK)
 user1_id (FK)
 user2_id (FK)
+since
 
 CHATS
 -----
 chat_id (PK)
+created_date
 chat_name
 
 MESSAGES
@@ -21,8 +25,10 @@ MESSAGES
 message_id (PK)
 message_text
 sent_date
-user_id (FK)
+sender_id(FK)
 chat_id (FK)
+type
+receiver_read
 
 CHATS_FRIENDSHIPS
 ----------------

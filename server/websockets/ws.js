@@ -105,7 +105,6 @@ function read(ws, payload) {
 }
 
 function callFriend(payload) {
-  console.log(payload);
   let caller = connections.find(
     (c) => c.connection.user.user_id == payload.caller.user_id,
   );

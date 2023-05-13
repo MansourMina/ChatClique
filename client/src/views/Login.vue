@@ -324,7 +324,7 @@ export default {
         const user = localStorage.getItem('user');
         if (user != null) {
           this.$router.push(`/`);
-          // this.$router.go();
+          this.$router.go();
         }
         return;
       } catch (err) {
