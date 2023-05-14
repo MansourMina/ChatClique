@@ -8,7 +8,7 @@ async function getMessages() {
 async function getChatsOfUser(userId) {
   const { rows } = await db.query(
     `SELECT  user_friend.username as friend_username, user_friend.user_id as friend_user_id, user_friend.image as friend_image,
-       c.chat_id,
+       c.chat_id, c.chat_type,
        COUNT(m.receiver_read) FILTER (where m.receiver_read = false and m.sender_id != $1)                                 AS unread,
        json_agg(json_build_object('message_id', m.message_id, 'username', sender.username, 'sender_id', sender.user_id,
                                   'send_date', send_date, 'receiver_read', receiver_read,  'type',type, 'message',
@@ -118,7 +118,7 @@ async function addFriendship(body) {
 
 async function addChat(date) {
   const { rows } = await db.query(
-    'INSERT INTO chats (created_date, type) VALUES ($1, $2) returning chat_id',
+    'INSERT INTO chats (created_date, chat_type) VALUES ($1, $2) returning chat_id',
     [date, 'direct'],
   );
   return rows[0];
@@ -205,8 +205,14 @@ async function deleteMessage(message_id) {
 
 async function createGroup(group) {
   const { rows } = await db.query(
-    'INSERT INTO chats (created_date, chat_name, admin_user_id, chat_type ) VALUES ($1, $2, $3) returning chat_id',
-    [group.created_date, group.group_name, group.created_by_user_id, 'group'],
+    'INSERT INTO chats (created_date, chat_name, admin_user_id, chat_type,chat_image ) VALUES ($1, $2, $3,$4, $5) returning chat_id',
+    [
+      group.created_date,
+      group.group_name,
+      group.created_by_user_id,
+      'group',
+      group.chat_image,
+    ],
   );
   return rows[0];
 }
@@ -218,6 +224,40 @@ async function addGroupMembers(group_id, members) {
       [group_id, member.user_id, new Date()],
     );
   }
+}
+
+async function getGroupsByUser(user_id) {
+  const { rows } = await db.query(
+    `SELECT c.chat_id,
+       c.chat_name,
+       c.chat_type,
+       c.chat_image,
+       (SELECT json_agg(json_build_object('user_id', u.user_id, 'username', u.username, 'name', u.name, 'image', u.image) ) as members
+        FROM group_members cp
+                 JOIN users u ON cp.user_id = u.user_id
+        WHERE cp.group_id = c.chat_id),
+       COUNT(m.receiver_read) FILTER (where m.receiver_read = false and m.sender_id != $1) AS unread,
+       json_agg(json_build_object('message_id', m.message_id, 'username', sender.username, 'sender_id', sender.user_id,
+                                  'send_date', send_date, 'receiver_read', receiver_read, 'type', type, 'message',
+                                  m.message))                                              AS messages
+FROM chats c
+          JOIN group_members cp ON c.chat_id = cp.group_id
+          JOIN users u ON cp.user_id = u.user_id
+         LEFT JOIN messages m ON c.chat_id = m.chat_id
+         LEFT JOIN users sender ON m.sender_id = sender.user_id
+where c.chat_type = 'group'
+  AND cp.user_id = $1
+GROUP BY c.chat_id, c.chat_name;`,
+    [user_id],
+  );
+  rows.forEach((el) => {
+    if (!el.messages[0].message_id) el.messages = [];
+    else
+      el.messages = el.messages.sort(
+        (a, b) => new Date(a.send_date) - new Date(b.send_date),
+      );
+  });
+  return rows;
 }
 
 module.exports = {
@@ -240,4 +280,5 @@ module.exports = {
   deleteMessage,
   createGroup,
   addGroupMembers,
+  getGroupsByUser,
 };

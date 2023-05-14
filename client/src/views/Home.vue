@@ -187,7 +187,7 @@
                     (showFullNav = false)
                 "
               >
-                <span class="mr-6">
+                <span class="mr-6" v-if="chat.chat_type == 'direct'">
                   <v-badge
                     bottom
                     :color="
@@ -199,7 +199,7 @@
                     offset-x="15"
                     offset-y="10"
                   >
-                    <v-avatar size="50">
+                    <v-avatar>
                       <v-img
                         width="50"
                         v-if="
@@ -208,17 +208,42 @@
                           chat.friend[0].image.length > 0
                         "
                         :src="chat.friend[0].image"
-                      >
-                      </v-img>
+                      ></v-img>
 
-                      <v-img v-else src="@/assets/placeholder.jpg" width="50">
-                      </v-img>
+                      <v-img
+                        width="50"
+                        v-else
+                        src="@/assets/placeholder.jpg"
+                        style="cursor: pointer"
+                      ></v-img>
                     </v-avatar>
                   </v-badge>
                 </span>
+                <span class="mr-6" v-else>
+                  <v-avatar>
+                    <v-img
+                      width="50"
+                      v-if="
+                        chat.chat_image != null &&
+                        chat.chat_image &&
+                        chat.chat_image.length > 0
+                      "
+                      :src="chat.chat_image"
+                    ></v-img>
+
+                    <v-img
+                      width="50"
+                      v-else
+                      src="@/assets/placeholder-group.png"
+                      style="cursor: pointer"
+                    ></v-img>
+                  </v-avatar>
+                </span>
                 <v-list-item-content>
                   <v-list-item-title>{{
-                    chat.friend[0].username
+                    chat.chat_type == 'direct'
+                      ? chat.friend[0].username
+                      : chat.chat_name
                   }}</v-list-item-title>
                   <v-list-item-subtitle>
                     <span
@@ -309,7 +334,7 @@
                     (showFullNav = false)
                 "
               >
-                <span class="mr-6">
+                <span class="mr-6" v-if="chat.chat_type == 'direct'">
                   <v-badge
                     bottom
                     :color="
@@ -341,17 +366,28 @@
                     </v-avatar>
                   </v-badge>
                 </span>
+                <span class="mr-6" v-else>
+                  <v-avatar>
+                    <v-img
+                      width="50"
+                      src="@/assets/placeholder-group.png"
+                      style="cursor: pointer"
+                    ></v-img>
+                  </v-avatar>
+                </span>
 
                 <v-list-item-content>
                   <v-list-item-title>{{
-                    chat.friend[0].username
+                    chat.chat_type == 'direct'
+                      ? chat.friend[0].username
+                      : chat.chat_name
                   }}</v-list-item-title>
                 </v-list-item-content>
               </v-list-item>
             </v-list>
           </div>
         </v-navigation-drawer>
-        <div v-if="show == 'chat' && currentUserChat.friend">
+        <div v-if="show == 'chat' && currentUserChat.chat_id">
           <v-app-bar
             color="transparent"
             class="pa-3"
@@ -373,7 +409,10 @@
                 style="cursor: pointer"
                 @click="openFriendInfo(currentUserChat.friend[0])"
               >
-                <v-list-item-avatar size="50">
+                <v-list-item-avatar
+                  size="50"
+                  v-if="currentUserChat.chat_type == 'direct'"
+                >
                   <v-img
                     width="50"
                     v-if="
@@ -390,15 +429,32 @@
                     src="@/assets/placeholder.jpg"
                   ></v-img>
                 </v-list-item-avatar>
+                <v-list-item-avatar size="50" v-else>
+                  <v-img
+                    v-if="
+                      currentUserChat.chat_image != null &&
+                      currentUserChat.chat_image &&
+                      currentUserChat.chat_image.length > 0
+                    "
+                    :src="currentUserChat.chat_image"
+                  ></v-img>
+
+                  <v-img v-else src="@/assets/placeholder-group.png"></v-img>
+                </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title class="text-h7 three-line">
                     {{
                       Object.keys(currentUserChat).length > 0
-                        ? currentUserChat.friend[0].username
+                        ? currentUserChat.chat_type == 'direct'
+                          ? currentUserChat.friend[0].username
+                          : currentUserChat.chat_name
                         : ''
                     }}
                   </v-list-item-title>
-                  <v-list-item-subtitle class="">
+                  <v-list-item-subtitle
+                    class=""
+                    v-if="currentUserChat.chat_type == 'direct'"
+                  >
                     <v-icon
                       :color="
                         getStatusOfFriend(currentUserChat.friend[0])
@@ -411,6 +467,13 @@
                       getStatusOfFriend(currentUserChat.friend[0])
                         ? 'online'
                         : 'offline'
+                    }}
+                  </v-list-item-subtitle>
+                  <v-list-item-subtitle class="" v-else three-line>
+                    {{
+                      currentUserChat.members
+                        .map((member) => member.username)
+                        .join(', ')
                     }}
                   </v-list-item-subtitle>
                 </v-list-item-content>
@@ -434,7 +497,7 @@
           </v-main>
         </div>
 
-        <div v-if="!currentUserChat.friend">
+        <div v-if="!currentUserChat.chat_id">
           <v-main><Start /></v-main>
         </div>
       </v-card>
@@ -538,6 +601,7 @@ export default {
     showCalling: false,
     call: false,
     closeNavigation: false,
+    groups: [],
   }),
   setup() {
     const childRef = ref(null);
@@ -585,7 +649,9 @@ export default {
     },
     searchChats() {
       return this.messages.filter((el) =>
-        el.friend[0].username.includes(this.search),
+        el.chat_type == 'direct'
+          ? el.friend[0].username.toLowerCase().includes(this.search.toLowerCase())
+          : el.chat_name.toLowerCase().includes(this.search.toLowerCase()),
       );
     },
 
@@ -596,7 +662,10 @@ export default {
     },
 
     mini() {
-      if (!this.currentUserChat.friend && this.$vuetify.breakpoint.name == 'xs')
+      if (
+        !this.currentUserChat.chat_id &&
+        this.$vuetify.breakpoint.name == 'xs'
+      )
         return { width: '100vw', drawer: false };
       switch (this.$vuetify.breakpoint.name) {
         case 'xs':
@@ -615,9 +684,11 @@ export default {
     },
   },
   methods: {
-    setChatByFriend(friend) {
-      let chatofFriend = this.messages.find(
-        (chat) => chat.friend[0].user_id == friend.user_id,
+    setChatByFriend(c) {
+      let chatofFriend = this.messages.find((chat) =>
+        c.chat_type == 'direct'
+          ? chat.friend[0].user_id == c.user_id
+          : chat.chat_id == c.chat_id,
       );
       this.setCurrentUserChat(chatofFriend);
     },
@@ -737,6 +808,7 @@ export default {
 
           case 'loadMessages':
             this.messages = userdata.payload;
+
             break;
           case 'readMessage':
             // eslint-disable-next-line no-case-declarations

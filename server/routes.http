@@ -18,3 +18,5 @@ content-Type: application/json
     "user_id": "4593822",
     "chat_id": "2927"
 }
+###
+GET  http://127.0.0.1:3000/groups/4822

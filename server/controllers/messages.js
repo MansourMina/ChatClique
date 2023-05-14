@@ -145,6 +145,11 @@ const deleteMessage = asyncHandler(async (req, res) => {
   res.status(200).json(message);
 });
 
+const getGroupsByUser = asyncHandler(async (req, res) => {
+  const groups = await messagesModel.getGroupsByUser(req.params.userId);
+  res.status(200).json(groups);
+});
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -161,4 +166,5 @@ module.exports = {
   updateProfile,
   deleteMessage,
   createGroup,
+  getGroupsByUser,
 };

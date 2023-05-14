@@ -50,10 +50,13 @@ function sendMessage(payload) {
 
     .catch(function () {});
   connections.forEach((el) => {
-    if (
-      el.connection.user.user_id == payload.receiver.user_id ||
-      el.connection.user.user_id == payload.sender.user_id
-    ) {
+    const abfrage =
+      payload.message.chat_type == 'direct'
+        ? el.connection.user.user_id == payload.receiver.user_id
+        : payload.receiver.find(
+            (user) => user.user_id == el.connection.user.user_id,
+          );
+    if (abfrage || el.connection.user.user_id == payload.sender.user_id) {
       el.ws.send(
         JSON.stringify({
           type: 'text',
@@ -153,11 +156,15 @@ async function registerConnection(ws, user) {
     const chats = await axios.get(
       `http://127.0.0.1:3000/chats/${user.user.user_id}`,
     );
+    const groups = await axios.get(
+      `http://127.0.0.1:3000/groups/${user.user.user_id}`,
+    );
 
+    const chat_and_groups = [...chats.data, ...groups.data];
     ws.send(
       JSON.stringify({
         type: 'loadMessages',
-        payload: chats.data,
+        payload: chat_and_groups,
       }),
     );
 

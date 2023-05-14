@@ -19,6 +19,8 @@ CHATS
 chat_id (PK)
 created_date
 chat_name
+admin_user_id (FK)
+chat_type
 
 MESSAGES
 --------
@@ -35,6 +37,13 @@ CHATS_FRIENDSHIPS
 chat_participant_id (PK)
 chat_id (FK)
 friendship_id (FK)
+
+GROUP_MEMBERS
+---------------
+group_member_id (PK)
+chat_id (FK)
+user_id (FK)
+since_date
 
 
 

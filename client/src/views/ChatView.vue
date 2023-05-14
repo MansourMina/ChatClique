@@ -7,7 +7,9 @@
       v-if="currentChat.messages.length > 0"
     >
       <v-container
-        class="pb-3 px-0 px-lg-5"
+        :class="`${
+          !displayUser(message, index) ? 'pb-1 pt-0 mt-0 mb-0' : 'pt-3 pb-3'
+        }  px-0 px-lg-5`"
         v-for="(message, index) in currentChat.messages"
         :key="message.message_id"
       >
@@ -35,79 +37,115 @@
             :attach="`#index${message.message_id}`"
           >
             <template v-slot:activator="{ on, attrs }">
-              <v-card
-                class="elevation-3 d-inline-block"
-                max-width="700"
-                :color="
-                  message.sender_id == user.user_id
-                    ? ownMessageColor.background
-                    : 'white'
-                "
-                @mouseover="showMenu = index"
-                @mouseleave="showMenu = null"
-                :id="`index${message.message_id}`"
-                rounded
-              >
-                <v-card-text
-                  :class="`pb-2 pt-2 black--text  ${
-                    message.sender_id == user.user_id
-                      ? ownMessageColor.text
-                      : 'black'
-                  }--text`"
-                  v-if="message.type == 'text'"
+              <div>
+                <v-list-item-avatar
+                  size="30"
+                  v-if="
+                    message.sender_id != user.user_id &&
+                    currentChat.chat_type == 'group'
+                  "
                 >
-                  {{ message.message }}
-                </v-card-text>
-                <v-img
-                  v-if="message.type == 'image'"
-                  max-width="250"
-                  :src="message.message"
-                  @click="$emit('openImage', message.message)"
-                  style="cursor: pointer"
-                ></v-img>
-
-                <v-btn
-                  icon
-                  small
-                  :large="message.type == 'image'"
-                  :color="`${message.type == 'image' ? 'white' : 'black'}`"
-                  :style="`
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    background-color: ${
+                  <v-img
+                    width="50"
+                    v-if="
+                      getImageOfUser(message) && displayUser(message, index)
+                    "
+                    :src="getImageOfUser(message)"
+                  ></v-img>
+                  <v-img
+                    v-if="
+                      !getImageOfUser(message) && displayUser(message, index)
+                    "
+                    src="@/assets/placeholder.jpg"
+                    width="50"
+                  ></v-img>
+                </v-list-item-avatar>
+                <div style="display: inline-grid">
+                  <v-card
+                    :class="`elevation-3 d-inline-block `"
+                    max-width="700"
+                    :color="
                       message.sender_id == user.user_id
                         ? ownMessageColor.background
                         : 'white'
-                    };
-                    ${message.type == 'image' ? 'background-color: none' : ''}
-                    `"
-                  v-show="
-                    message.sender_id == user.user_id &&
-                    (showMenu == index || message.type == 'image')
-                  "
-                  v-bind="attrs"
-                  v-on="on"
-                >
-                  <v-icon>mdi-chevron-down</v-icon>
-                </v-btn>
-              </v-card>
-              <div class="mr-1">
-                <span
-                  class="text--disabled"
-                  style="font-size: 0.65rem !important"
-                >
-                  {{ time(message.send_date) }}
-                </span>
-                <span v-if="message.sender_id == user.user_id">
-                  <v-icon
-                    small
-                    v-if="message.receiver_read"
-                    color="green accent-4"
-                    >mdi-check-all</v-icon
+                    "
+                    @mouseover="showMenu = index"
+                    @mouseleave="showMenu = null"
+                    :id="`index${message.message_id}`"
+                    rounded
                   >
-                  <v-icon small v-else>mdi-check-all</v-icon>
-                </span>
+                    <v-card-text
+                      v-show="displayUser(message, index)"
+                      class="pb-0"
+                      >{{ message.username }}</v-card-text
+                    >
+                    <v-card-text
+                      :class="`pb-2 pt-2 black--text  ${
+                        message.sender_id == user.user_id
+                          ? ownMessageColor.text
+                          : 'black'
+                      }--text`"
+                      v-if="message.type == 'text'"
+                    >
+                      {{ message.message }}
+                    </v-card-text>
+                    <v-img
+                      v-if="message.type == 'image'"
+                      max-width="250"
+                      :src="message.message"
+                      @click="$emit('openImage', message.message)"
+                      style="cursor: pointer"
+                    ></v-img>
+
+                    <v-btn
+                      icon
+                      small
+                      :large="message.type == 'image'"
+                      :color="`${message.type == 'image' ? 'white' : 'black'}`"
+                      :style="`
+                              position: absolute;
+                              top: 0;
+                              right: 0;
+                              background-color: ${
+                                message.sender_id == user.user_id
+                                  ? ownMessageColor.background
+                                  : 'white'
+                              };
+                              ${
+                                message.type == 'image'
+                                  ? 'background-color: none'
+                                  : ''
+                              }
+                              `"
+                      v-show="
+                        message.sender_id == user.user_id &&
+                        (showMenu == index || message.type == 'image')
+                      "
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      <v-icon>mdi-chevron-down</v-icon>
+                    </v-btn>
+                  </v-card>
+
+                  <div class="mr-1">
+                    <span
+                      class="text--disabled"
+                      style="font-size: 0.65rem !important"
+                    >
+                      {{ time(message.send_date) }}
+                    </span>
+                    <span v-if="message.sender_id == user.user_id">
+                      <v-icon
+                        small
+                        v-if="message.receiver_read"
+                        color="green accent-4"
+                        >mdi-check-all</v-icon
+                      >
+                      <v-icon small v-else>mdi-check-all</v-icon>
+                    </span>
+                  </div>
+                </div>
               </div>
             </template>
             <v-list dense>
@@ -181,7 +219,9 @@
       v-else
     >
       <div class="text-center">
-        <v-icon x-large class="text--disabled" style="font-size: 100px;">mdi-message-text</v-icon>
+        <v-icon x-large class="text--disabled" style="font-size: 100px"
+          >mdi-message-text</v-icon
+        >
         <h2 class="text--secondary">No chat messages yet</h2>
         <span class="text--disabled">Start the conversation!</span>
       </div>
@@ -288,6 +328,33 @@ export default {
     };
   },
   methods: {
+    displayUser(message, index) {
+      if (this.currentChat.chat_type == 'group') {
+        if (message.sender_id != this.user.user_id) {
+          if (index == 0) return true;
+
+          if (
+            this.currentChat.messages[index - 1].sender_id !=
+              message.sender_id ||
+            this.isDifferentDay(
+              this.currentChat.messages[index - 1].send_date,
+              this.currentChat.messages[index].send_date,
+            )
+          ) {
+            return true;
+          }
+          return false;
+        }
+        return false;
+      }
+      return false;
+    },
+    getImageOfUser(message) {
+      let image = this.currentChat.members.find(
+        (member) => member.user_id == message.sender_id,
+      ).image;
+      return image == '' || !image ? null : image;
+    },
     async deleteText(message) {
       this.$emit('deleteMessage', message);
     },
@@ -321,7 +388,10 @@ export default {
     sendMessage() {
       let data = {
         sender: this.user,
-        receiver: this.currentChat.friend[0],
+        receiver:
+          this.currentChat.chat_type == 'direct'
+            ? this.currentChat.friend[0]
+            : this.currentChat.members,
         message: {
           sender_id: this.user.user_id,
           chat_id: this.currentChat.chat_id,
@@ -329,6 +399,7 @@ export default {
           type: this.messageToSend,
           message: this.message,
           receiver_read: false,
+          chat_type: this.currentChat.chat_type,
         },
       };
       this.$emit('sendMessage', {

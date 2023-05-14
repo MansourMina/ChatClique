@@ -17,12 +17,14 @@ const {
   updateProfile,
   deleteMessage,
   createGroup,
+  getGroupsByUser,
 } = require('../controllers/messages');
 
 router.get('/users', getUsers);
 router.get('/friends/:userId', getFriends);
 router.get('/requests/:userId', getRequests);
 router.get('/chats/:userId', getChatsOfUser);
+router.get('/groups/:userId', getGroupsByUser);
 router.get('/logout', logout);
 
 router.post('/messages', postMessage);

@@ -223,6 +223,7 @@ export default {
           created_by_user_id: this.user.user_id,
           created_date: new Date(),
           members: this.selectedFriends,
+          chat_image: this.imageFile
         },
       });
     },
