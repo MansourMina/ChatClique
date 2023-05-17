@@ -10,6 +10,7 @@
           permanent
           floating
           :mini-variant.sync="closeNavigation"
+          style="overflow: hidden; height: 100%"
         >
           <addFriend
             v-if="nav == 'addFriend'"
@@ -42,6 +43,7 @@
             :friends="friends"
             @close="nav = 'chat'"
             :user="user"
+            @reload="reload"
           />
           <div v-if="nav == 'chat'">
             <v-list color="transparent" class="pa-3">
@@ -170,8 +172,10 @@
             </v-text-field>
 
             <v-divider></v-divider>
-
-            <v-list max-height="80vh" v-if="messages.length > 0">
+            <v-list
+              v-if="messages.length > 0"
+              style="overflow-y: scroll; height: 100%"
+            >
               <v-list-item
                 link
                 v-for="chat in chatsWithMessages"
@@ -387,7 +391,7 @@
             </v-list>
           </div>
         </v-navigation-drawer>
-        <div v-if="show == 'chat' && currentUserChat.chat_id">
+        <div v-if="show == 'chat' && currentUserChat.chat_id" :width="this.$vuetify.breakpoint.name == 'sm' && showChatInfo ? '0' : ''">
           <v-app-bar
             color="transparent"
             class="pa-3"
@@ -403,11 +407,15 @@
               <v-icon>mdi-arrow-left</v-icon>
             </v-app-bar-nav-icon>
 
-            <v-list color="transparent" class="pa-3 ml-0 pl-0">
+            <v-list
+              color="transparent"
+              class="pa-3 ml-0 pl-0"
+              :max-width="$vuetify.breakpoint.name == 'xs' ? '280' : '500'"
+            >
               <v-list-item
                 inactive
                 style="cursor: pointer"
-                @click="openFriendInfo(currentUserChat.friend[0])"
+                @click="openChatInfo(currentUserChat)"
               >
                 <v-list-item-avatar
                   size="50"
@@ -469,7 +477,7 @@
                         : 'offline'
                     }}
                   </v-list-item-subtitle>
-                  <v-list-item-subtitle class="" v-else three-line>
+                  <v-list-item-subtitle class="" v-else>
                     {{
                       currentUserChat.members
                         .map((member) => member.username)
@@ -480,9 +488,37 @@
               </v-list-item>
             </v-list>
             <v-spacer></v-spacer>
-            <v-btn icon @click="callFriend(currentUserChat.friend[0])">
+
+            <v-btn
+              icon
+              @click="callFriend(currentUserChat.friend[0])"
+              v-if="currentUserChat.chat_type == 'direct'"
+            >
               <v-icon>mdi-video-outline</v-icon>
             </v-btn>
+            <v-menu
+              bottom
+              left
+              offset-y
+              v-if="currentUserChat.chat_type == 'group'"
+            >
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon v-bind="attrs" v-on="on" aria-label="group menu">
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+
+              <v-list width="150" class="pt-0 pb-0 ma-1">
+                <v-list-item link dark class="pa-0" @click="askUser = true">
+                  <v-list-item-avatar
+                    ><v-icon color="red accent-4">mdi-logout</v-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-title class="red--text text--accent-4"
+                    >Leave group</v-list-item-title
+                  >
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </v-app-bar>
 
           <v-main hide-overlay style="height: 100vh" class="grey lighten-4">
@@ -519,13 +555,15 @@
       app
       permanent
       right
-      v-if="showFriendInfo"
-      width="500"
+      v-if="showChatInfo"
+      :width="this.$vuetify.breakpoint.name == 'xs' ? '100vw':'500'"
     >
-      <friendInfo
-        :friendInfo="friendInfo"
-        @close="showFriendInfo = false"
+      <chatInfo
+        :chatInfo="chatInfo"
+        @close="showChatInfo = false"
         @openImage="openImage"
+        @setCurrentUserChat="setChatByFriend"
+        :user="user"
       />
     </v-navigation-drawer>
     <v-dialog
@@ -545,6 +583,9 @@
     >
       <v-card>Calllling</v-card>
     </v-dialog>
+    <v-dialog v-model="askUser" max-width="400" persistent>
+      <askUser @close="askUser = false" @accept="askUser = false" />
+    </v-dialog>
   </v-app>
 </template>
 
@@ -557,7 +598,8 @@ import addFriend from '@/views/addFriend.vue';
 import friendsList from '@/views/friendsList.vue';
 import openImage from '@/components/openImage.vue';
 import calling from '@/components/calling.vue';
-import friendInfo from '@/components/friendInfo.vue';
+import chatInfo from '@/components/chatInfo.vue';
+import askUser from '@/components/askUser.vue';
 import ChatView from '@/views/ChatView.vue';
 import createGroup from '@/views/createGroup.vue';
 import axios from 'axios';
@@ -572,9 +614,10 @@ export default {
     openImage,
     Profile,
     ChatView,
-    friendInfo,
+    chatInfo,
     calling,
     createGroup,
+    askUser,
   },
   data: () => ({
     ws: null,
@@ -587,6 +630,7 @@ export default {
     connectedFriends: [],
     show: '',
     nav: 'chat',
+    askUser: false,
     image: false,
     imageToOpen: null,
     server: process.env.VUE_APP_SERVER,
@@ -596,8 +640,8 @@ export default {
     requests: [],
     chatRef: null,
     friends: [],
-    showFriendInfo: false,
-    friendInfo: {},
+    showChatInfo: false,
+    chatInfo: {},
     showCalling: false,
     call: false,
     closeNavigation: false,
@@ -650,7 +694,9 @@ export default {
     searchChats() {
       return this.messages.filter((el) =>
         el.chat_type == 'direct'
-          ? el.friend[0].username.toLowerCase().includes(this.search.toLowerCase())
+          ? el.friend[0].username
+              .toLowerCase()
+              .includes(this.search.toLowerCase())
           : el.chat_name.toLowerCase().includes(this.search.toLowerCase()),
       );
     },
@@ -667,6 +713,8 @@ export default {
         this.$vuetify.breakpoint.name == 'xs'
       )
         return { width: '100vw', drawer: false };
+      if (this.showChatInfo && this.$vuetify.breakpoint.name == 'xs')
+        return { width: '0', drawer: false };
       switch (this.$vuetify.breakpoint.name) {
         case 'xs':
           return { width: this.showFullNav ? '100vw' : '0', drawer: false };
@@ -684,12 +732,30 @@ export default {
     },
   },
   methods: {
+    // reload(users) {
+    //   let connections = this.connectedFriends.filter((connection) =>
+    //     users.some((user) => connection.user_id === user.user_id),
+    //   );
+    //   this.ws.send(
+    //     JSON.stringify({
+    //       type: 'reload',
+    //       payload: connections,
+    //     }),
+    //   );
+    // },
+    async leaveGroup(chat_id) {
+      await axios({
+        url: `/group/${chat_id}/${this.user.user_id}`,
+        method: 'DELETE',
+      });
+      this.currentUserChat = {};
+      this.messages = this.messages.filter((chat) => chat.chat_id != chat_id);
+    },
     setChatByFriend(c) {
-      let chatofFriend = this.messages.find((chat) =>
-        c.chat_type == 'direct'
-          ? chat.friend[0].user_id == c.user_id
-          : chat.chat_id == c.chat_id,
+      let chatofFriend = this.messages.find(
+        (chat) => chat.friend[0].user_id == c.user_id,
       );
+      this.showChatInfo = false;
       this.setCurrentUserChat(chatofFriend);
     },
     async updateProfile(body) {
@@ -732,9 +798,17 @@ export default {
       this.image = true;
       this.imageToOpen = img;
     },
-    openFriendInfo(friend) {
-      this.friendInfo = this.friends.find((f) => friend.user_id == f.user_id);
-      this.showFriendInfo = true;
+    openChatInfo(chat) {
+      if (chat.chat_type == 'direct') {
+        this.chatInfo = {
+          chat_type: chat.chat_type,
+          info: this.friends.find((f) => chat.friend[0].user_id == f.user_id),
+        };
+      } else if (chat.chat_type == 'group') {
+        this.chatInfo = { chat_type: chat.chat_type, info: chat };
+      }
+
+      this.showChatInfo = true;
     },
     sendMessage(data) {
       this.ws.send(JSON.stringify(data));

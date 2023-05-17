@@ -226,6 +226,8 @@ export default {
           chat_image: this.imageFile
         },
       });
+      this.$emit('close')
+      this.$emit('reload', this.selectedFriends)
     },
   },
 };

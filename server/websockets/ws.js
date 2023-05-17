@@ -6,20 +6,26 @@ function wsServer(httpServer) {
   wss.on('connection', (ws) => {
     ws.on('message', (p) => {
       const data = JSON.parse(p);
-      if (data.type == 'connected') {
-        registerConnection(ws, data.payload);
-      }
-      if (data.type == 'message') {
-        sendMessage(data.payload);
-      }
-      if (data.type == 'read') {
-        read(ws, data.payload);
-      }
-      if (data.type == 'calling') {
-        callFriend(data.payload);
-      }
-      if (data.type == 'delete') {
-        deleteMessage(data.payload);
+      switch (data.type) {
+        case 'connected':
+          registerConnection(ws, data.payload);
+          break;
+        case 'message':
+          sendMessage(data.payload);
+          break;
+        case 'read':
+          read(ws, data.payload);
+          break;
+        case 'calling':
+          callFriend(data.payload);
+          break;
+        case 'delete':
+          deleteMessage(data.payload);
+          break;
+        case 'reload':
+          reloadData(data.payload);
+        default:
+          break;
       }
     });
 
@@ -41,6 +47,23 @@ function wsServer(httpServer) {
   });
 }
 
+function reloadData(payload) {
+  // connections.forEach((el) => {
+  //   if (payload.find((user) => user.user_id == el.connection.user.user_id)) {
+  //     el.ws.send(
+  //       JSON.stringify({
+  //         type: 'reload',
+  //         payload: {
+  //           sender: payload.sender,
+  //           receiver: payload.receiver,
+  //           message: payload.message,
+  //         },
+  //       }),
+  //     );
+  //   }
+  // });
+}
+
 function sendMessage(payload) {
   axios
     .post('http://localhost:3000/messages', payload.message)
@@ -59,7 +82,7 @@ function sendMessage(payload) {
     if (abfrage || el.connection.user.user_id == payload.sender.user_id) {
       el.ws.send(
         JSON.stringify({
-          type: 'text',
+          type: 'loadMessages',
           payload: {
             sender: payload.sender,
             receiver: payload.receiver,
@@ -153,6 +176,7 @@ async function registerConnection(ws, user) {
   } else {
     // save new connection and websocket in connections
     connections.push({ ws: ws, connection: user });
+
     const chats = await axios.get(
       `http://127.0.0.1:3000/chats/${user.user.user_id}`,
     );

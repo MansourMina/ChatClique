@@ -18,6 +18,7 @@ const {
   deleteMessage,
   createGroup,
   getGroupsByUser,
+  leaveGroup,
 } = require('../controllers/messages');
 
 router.get('/users', getUsers);
@@ -37,6 +38,7 @@ router.post('/group', createGroup);
 router.patch('/messages/:chatId', readMessage);
 router.patch('/user/:userId', updateProfile);
 
+router.delete('/group/:chatId/:userId', leaveGroup);
 router.delete('/message/:messageId', deleteMessage);
 
 module.exports = router;

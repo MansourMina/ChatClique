@@ -232,6 +232,7 @@ async function getGroupsByUser(user_id) {
        c.chat_name,
        c.chat_type,
        c.chat_image,
+       c.admin_user_id,
        (SELECT json_agg(json_build_object('user_id', u.user_id, 'username', u.username, 'name', u.name, 'image', u.image) ) as members
         FROM group_members cp
                  JOIN users u ON cp.user_id = u.user_id
@@ -260,6 +261,14 @@ GROUP BY c.chat_id, c.chat_name;`,
   return rows;
 }
 
+async function leaveGroup(chat_id, user_id) {
+  const { rows } = await db.query(
+    'DELETE from group_members where user_id = $2 And group_id = $1 ',
+    [chat_id, user_id],
+  );
+  return rows;
+}
+
 module.exports = {
   getChatsOfUser,
   postMessage,
@@ -281,4 +290,5 @@ module.exports = {
   createGroup,
   addGroupMembers,
   getGroupsByUser,
+  leaveGroup,
 };
