@@ -82,7 +82,7 @@ function sendMessage(payload) {
     if (abfrage || el.connection.user.user_id == payload.sender.user_id) {
       el.ws.send(
         JSON.stringify({
-          type: 'loadMessages',
+          type: 'text',
           payload: {
             sender: payload.sender,
             receiver: payload.receiver,

@@ -41,7 +41,10 @@
         </v-list-item-content>
       </v-container>
       <v-card class="mt-10 px-4 pb-2" flat style="text-align: left">
-        <v-card-text class="pl-3">Your name</v-card-text>
+        <v-card-text class="pl-3">Name</v-card-text>
+        <v-card-text class="pl-3 pt-0 font-weight-black">{{
+          chatInfo.info.name
+        }}</v-card-text>
       </v-card>
     </div>
     <div v-else>
@@ -68,7 +71,9 @@
       </v-container>
       <v-card class="mt-10 px-4 pb-2" flat style="text-align: left">
         <v-list class="mt-0 pt-0" subheader two-line>
-          <v-subheader>{{ chatInfo.info.members.length }} members </v-subheader>
+          <v-subheader
+            >{{ chatInfo.info.members.length }} participants</v-subheader
+          >
 
           <v-list-item
             v-for="(member, index) in chatInfo.info.members"
@@ -90,7 +95,7 @@
               }}</v-list-item-title>
             </v-list-item-content>
             <v-list-item-action
-              v-if="member.user_id == user.user_id"
+              v-if="chatInfo.info.admin_user_id == member.user_id"
               style="font-size: 0.8rem !important"
             >
               <v-chip color="primary" x-small>
@@ -120,7 +125,7 @@
                 </template>
 
                 <v-list width="150" class="pt-0 pb-0 ma-1">
-                  <v-list-item link>
+                  <v-list-item link @click="kickMember(member.user_id)">
                     <v-list-item-title>Remove</v-list-item-title>
                   </v-list-item>
                 </v-list>
@@ -130,6 +135,14 @@
         </v-list>
       </v-card>
     </div>
+    <v-footer color="transparent" app style="justify-content: center">
+      <span v-if="chatInfo.chat_type == 'direct'" class="text--disabled">
+        Friend since {{ getCurrentDate(chatInfo.info.since) }}</span
+      >
+      <span v-else class="text--disabled">
+        Group created {{ getCurrentDate(chatInfo.info.created_date) }}</span
+      >
+    </v-footer>
   </div>
 </template>
 
@@ -146,6 +159,18 @@ export default {
     },
     user: {
       type: Object,
+    },
+  },
+  methods: {
+    getCurrentDate(d) {
+      const t = new Date(d);
+      const date = ('0' + t.getDate()).slice(-2);
+      const month = ('0' + (t.getMonth() + 1)).slice(-2);
+      const year = t.getFullYear();
+      return `${date}/${month}/${year}`;
+    },
+    kickMember(user_id) {
+      this.$emit('kickMember', this.chatInfo.info.chat_id, user_id )
     },
   },
 };

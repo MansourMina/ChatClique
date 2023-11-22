@@ -63,7 +63,7 @@
                 <div style="display: inline-grid">
                   <v-card
                     :class="`elevation-3 d-inline-block `"
-                    max-width="700"
+                    max-width="600"
                     :color="
                       message.sender_id == user.user_id
                         ? ownMessageColor.background
@@ -228,59 +228,61 @@
     </v-container>
 
     <v-footer padless color="#f0f2f5" inset app>
-      <v-btn
-        color="black"
-        dark
-        icon
-        @click="handleFileImport"
-        aria-label="Choose File"
-      >
-        <v-icon>mdi-paperclip</v-icon>
-      </v-btn>
-
-      <!-- hidden but triggered with JavaScript -->
-      <input
-        ref="uploader"
-        class="d-none"
-        type="file"
-        @input="onFileChanged"
-        accept="image/png, image/jpeg"
-      />
-      <v-file-input
-        v-if="showFile"
-        class="pa-2"
-        solo
-        hide-details
-        flat
-        rounded
-        truncate-length="15"
-        v-model="selectedFile"
-        append-icon="mdi-close"
-        :clearable="false"
-        prepend-icon=""
-        @click:append="closeFileInput()"
-        @keyup.enter="message.length > 0 ? sendMessage() : false"
-      ></v-file-input>
-      <v-text-field
-        v-else
-        class="pa-2"
-        label="send a message"
-        solo
-        hide-details
-        flat
-        rounded
-        v-model="message"
-        @keyup.enter="message.length > 0 ? sendMessage() : false"
-      ></v-text-field>
-      <v-btn
-        color="black"
-        dark
-        icon
-        @click="message.length > 0 ? sendMessage() : false"
-        aria-label="Send message"
-      >
-        <v-icon>mdi-send</v-icon>
-      </v-btn>
+      <div class="d-flex" style="align-items: center; width: 100%">
+        <v-btn
+          color="black"
+          dark
+          icon
+          @click="handleFileImport"
+          aria-label="Choose File"
+        >
+          <v-icon>mdi-paperclip</v-icon>
+        </v-btn>
+  
+        <!-- hidden but triggered with JavaScript -->
+        <input
+          ref="uploader"
+          class="d-none"
+          type="file"
+          @input="onFileChanged"
+          accept="image/png, image/jpeg"
+        />
+        <v-file-input
+          v-if="showFile"
+          class="pa-2"
+          solo
+          hide-details
+          flat
+          rounded
+          truncate-length="15"
+          v-model="selectedFile"
+          append-icon="mdi-close"
+          :clearable="false"
+          prepend-icon=""
+          @click:append="closeFileInput()"
+          @keyup.enter="message.length > 0 ? sendMessage() : false"
+        ></v-file-input>
+        <v-text-field
+          v-else
+          class="pa-2"
+          label="send a message"
+          solo
+          hide-details
+          flat
+          rounded
+          v-model="message"
+          @keyup.enter="message.length > 0 ? sendMessage() : false"
+        ></v-text-field>
+        <v-btn
+          color="black"
+          dark
+          icon
+          @click="message.length > 0 ? sendMessage() : false"
+          aria-label="Send message"
+        >
+          <v-icon>mdi-send</v-icon>
+        </v-btn>
+      </div>
     </v-footer>
     <v-snackbar
       v-model="showCopy"

@@ -36,6 +36,7 @@
             :requests="requests"
             :onlineFriends="connectedFriends"
             @setCurrentUserChat="setChatByFriend"
+            @refreshRequests="getRequests"
           />
 
           <createGroup
@@ -391,7 +392,12 @@
             </v-list>
           </div>
         </v-navigation-drawer>
-        <div v-if="show == 'chat' && currentUserChat.chat_id" :width="this.$vuetify.breakpoint.name == 'sm' && showChatInfo ? '0' : ''">
+        <div
+          v-if="show == 'chat' && currentUserChat.chat_id"
+          :width="
+            this.$vuetify.breakpoint.name == 'sm' && showChatInfo ? '0' : ''
+          "
+        >
           <v-app-bar
             color="transparent"
             class="pa-3"
@@ -556,7 +562,7 @@
       permanent
       right
       v-if="showChatInfo"
-      :width="this.$vuetify.breakpoint.name == 'xs' ? '100vw':'500'"
+      :width="this.$vuetify.breakpoint.name == 'xs' ? '100vw' : '500'"
     >
       <chatInfo
         :chatInfo="chatInfo"
@@ -564,6 +570,7 @@
         @openImage="openImage"
         @setCurrentUserChat="setChatByFriend"
         :user="user"
+        @kickMember="leaveGroup"
       />
     </v-navigation-drawer>
     <v-dialog
@@ -584,7 +591,13 @@
       <v-card>Calllling</v-card>
     </v-dialog>
     <v-dialog v-model="askUser" max-width="400" persistent>
-      <askUser @close="askUser = false" @accept="askUser = false" />
+      <askUser
+        @close="askUser = false"
+        @accept="
+          leaveGroup(currentUserChat.chat_id, user.user_id, 'self'),
+            (askUser = false)
+        "
+      />
     </v-dialog>
   </v-app>
 </template>
@@ -743,13 +756,15 @@ export default {
     //     }),
     //   );
     // },
-    async leaveGroup(chat_id) {
+    async leaveGroup(chat_id, user_id, type) {
       await axios({
-        url: `/group/${chat_id}/${this.user.user_id}`,
+        url: `/group/${chat_id}/${user_id}`,
         method: 'DELETE',
       });
-      this.currentUserChat = {};
-      this.messages = this.messages.filter((chat) => chat.chat_id != chat_id);
+      if (type == 'self') {
+        this.currentUserChat = {};
+        this.messages = this.messages.filter((chat) => chat.chat_id != chat_id);
+      }
     },
     setChatByFriend(c) {
       let chatofFriend = this.messages.find(
@@ -882,8 +897,8 @@ export default {
 
           case 'loadMessages':
             this.messages = userdata.payload;
-
             break;
+
           case 'readMessage':
             // eslint-disable-next-line no-case-declarations
             this.messages
@@ -990,6 +1005,7 @@ export default {
       return lastMessage.type == 'text' ? lastMessage.message : 'Photo';
     },
     async setCurrentUserChat(chat) {
+      this.showChatInfo = false;
       this.show = 'chat';
       this.scrollToEnd();
       // if (type == 'toStorage')

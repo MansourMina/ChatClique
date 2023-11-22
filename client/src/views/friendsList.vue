@@ -110,12 +110,12 @@ export default {
     requests: {
       type: Array,
     },
-    onlineFriends: {
+    onlineFriends : {
       type: Array,
     },
   },
-  created() {
-    this.getFriends();
+  async created() {
+    await this.getFriends();
   },
   computed: {
     online() {
@@ -146,7 +146,10 @@ export default {
           date: new Date(),
         },
       });
+      this.$emit("refreshRequests");
+      this.getFriends();
     },
+     
     async getFriends() {
       const { data } = await axios({
         url: '/friends/' + this.user.user_id,

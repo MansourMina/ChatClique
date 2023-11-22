@@ -233,7 +233,8 @@ async function getGroupsByUser(user_id) {
        c.chat_type,
        c.chat_image,
        c.admin_user_id,
-       (SELECT json_agg(json_build_object('user_id', u.user_id, 'username', u.username, 'name', u.name, 'image', u.image) ) as members
+       c.created_date,
+       (SELECT json_agg(json_build_object('group_member_id', cp.group_member_id, 'user_id', u.user_id, 'username', u.username, 'name', u.name, 'image', u.image) ) as members
         FROM group_members cp
                  JOIN users u ON cp.user_id = u.user_id
         WHERE cp.group_id = c.chat_id),
